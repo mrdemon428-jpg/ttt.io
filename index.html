@@ -1,0 +1,2467 @@
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>tanks.io</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #b2b2b2; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+        canvas { display: block; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .panel { background: rgba(0, 0, 0, 0.6); color: white; padding: 15px; border-radius: 8px; pointer-events: auto; }
+       
+        #start-screen, #shop-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            background: rgba(0, 0, 0, 0.4); z-index: 50; pointer-events: auto;
+        }
+       
+        .start-box {
+            background: rgba(0, 0, 0, 0.85); padding: 40px; border-radius: 10px;
+            text-align: center; border: 4px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 350px;
+        }
+        .start-box h1 { color: #00b894; margin-top: 0; font-size: 40px; text-shadow: 2px 2px 0 #000; margin-bottom: 10px; }
+       
+        #save-stats {
+            background: rgba(0,0,0,0.5); border-radius: 8px; padding: 10px; margin-bottom: 20px;
+            font-size: 18px; color: #fff; border: 2px solid #555;
+        }
+        .highlight-stat { color: #f1c40f; font-weight: bold; }
+        .gem-stat { color: #00cec9; font-weight: bold; }
+
+        .start-box input {
+            padding: 12px; font-size: 18px; border-radius: 5px; border: 2px solid #555;
+            background: #222; color: white; outline: none; margin-bottom: 15px; text-align: center; width: 250px;
+            box-sizing: border-box;
+        }
+        .start-box input:focus { border-color: #00b894; }
+       
+        .btn {
+            padding: 12px; font-size: 20px; font-weight: bold; cursor: pointer;
+            color: white; border: 3px solid #000; border-radius: 5px; transition: 0.2s; width: 100%; margin-bottom: 10px;
+        }
+        .btn-play { background: #00b894; }
+        .btn-play:hover { background: #55efc4; transform: scale(1.05); }
+        .btn-shop { background: #0984e3; }
+        .btn-shop:hover { background: #74b9ff; transform: scale(1.05); }
+        .btn-clear-save { background: #d63031; font-size: 14px; padding: 8px; margin-top: 10px; display: none; }
+        .btn-clear-save:hover { background: #ff7675; }
+
+        #start-screen .start-box { width: 430px; max-height: 92vh; overflow-y: auto; }
+        .home-cap-section { margin: 10px 0 18px; background: rgba(255,255,255,0.06); border: 2px solid #444; border-radius: 8px; padding: 12px; text-align: left; }
+        .home-cap-section h2 { margin: 0 0 8px 0; font-size: 18px; color: #f1c40f; text-align: center; }
+        .home-cap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .home-cap-btn { background:#2d3436; color:white; border:2px solid #555; border-radius:6px; padding:10px 8px; cursor:pointer; font-size: 13px; line-height:1.2; }
+        .home-cap-btn:hover { filter: brightness(1.15); }
+        .home-cap-btn:disabled { opacity:0.5; cursor: default; }
+        .home-cap-cost { display:block; margin-top:4px; font-weight:bold; color:#00cec9; }
+        .home-cap-note { margin-top: 8px; font-size: 12px; color:#ddd; text-align:center; }
+
+        /* --- SPIN WHEEL UI --- */
+        #spin-wheel-ui {
+            position: absolute; top: 20px; left: 20px;
+            background: rgba(0, 0, 0, 0.85); padding: 15px; border-radius: 10px;
+            border: 4px solid #f1c40f; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            text-align: center; width: 250px; z-index: 100; pointer-events: auto;
+        }
+        #spin-wheel-ui h3 { color: #f1c40f; margin-top: 0; margin-bottom: 10px; text-shadow: 1px 1px 0 #000; }
+        
+        #wheel-container {
+            position: relative; margin: 15px auto; width: 200px; height: 200px;
+            display: flex; justify-content: center; align-items: center;
+        }
+        #wheel-canvas {
+            border-radius: 50%; border: 4px solid #333; box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            /* Transform will be manipulated via JS */
+        }
+        #wheel-pointer {
+            position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent;
+            border-top: 25px solid #e74c3c; z-index: 10; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.8));
+        }
+
+        #spin-btn {
+            background: #2ecc71; color: white; font-weight: bold; font-size: 16px;
+            padding: 10px; border: 2px solid #27ae60; border-radius: 5px; width: 100%; cursor: pointer; transition: 0.2s;
+        }
+        #spin-btn:hover:not(:disabled) { background: #27ae60; transform: scale(1.05); }
+        #spin-btn:disabled { background: #7f8c8d; border-color: #95a5a6; cursor: not-allowed; }
+        #spin-timer { margin-top: 8px; font-size: 13px; font-weight: bold; color: #e74c3c; }
+        #spin-result { margin-top: 8px; font-size: 15px; font-weight: bold; min-height: 22px; color: #00cec9; text-shadow: 1px 1px 0 #000;}
+
+        /* --- SHOP UI --- */
+        #shop-screen { display: none; flex-direction: column; }
+        .shop-box {
+            background: rgba(0, 0, 0, 0.9); padding: 30px; border-radius: 10px;
+            border: 4px solid #0984e3; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            width: 850px; max-width: 95%; max-height: 85%; overflow-y: auto; text-align: center;
+        }
+        .shop-box h1 { color: #00cec9; margin-top: 0; font-size: 36px; text-shadow: 2px 2px 0 #000; }
+        .shop-header-stats { font-size: 24px; color: white; margin-bottom: 5px; }
+       
+        #shop-error-msg {
+            color: #ff7675; font-weight: bold; font-size: 18px; min-height: 24px;
+            margin-bottom: 15px; opacity: 0; transition: opacity 0.3s ease;
+        }
+
+        .shop-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .shop-item {
+            background: #2d3436; border: 3px solid #555; border-radius: 8px; padding: 15px;
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+        }
+        .shop-item h3 { margin: 0 0 10px 0; color: white; }
+       
+        .shop-item-canvas {
+            background: rgba(0,0,0,0.3); border-radius: 8px; margin-bottom: 10px;
+        }
+       
+        .shop-btn {
+            padding: 8px 15px; font-size: 16px; font-weight: bold; border-radius: 5px; border: 2px solid #000; cursor: pointer; width: 100%; transition: 0.2s;
+        }
+        .btn-buy { background: #f1c40f; color: black; }
+        .btn-buy:hover { background: #ffeaa7; }
+        .btn-unlocked { background: #636e72; color: white; cursor: default; }
+       
+        .btn-close { background: #d63031; margin-top: 20px; width: auto; padding: 10px 40px; }
+        .btn-close:hover { background: #ff7675; transform: scale(1.05); }
+
+        /* --- GAME UI --- */
+        #game-ui { display: none; width: 100%; height: 100%; }
+       
+        #info-panel { position: absolute; top: 20px; left: 20px; text-align: left; min-width: 180px; }
+        #combat-status { color: #2ecc71; font-weight: bold; margin-top: 8px; font-size: 14px; }
+       
+        #stats-panel { position: absolute; bottom: 65px; left: 5px; display: flex; flex-direction: column; gap: 5px; }
+        .stat-row { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; }
+        .stat-row:hover { color: #f1c40f; }
+        .stat-bar { width: 100px; height: 12px; background: #333; border: 2px solid #555; border-radius: 4px; overflow: hidden; }
+        .stat-fill { height: 100%; background: #f1c40f; transition: width 0.2s; }
+       
+        #gem-display {
+            position: absolute; bottom: 5px; left: 5px;
+            background: rgba(0,0,0,0.7); border: 2px solid #00cec9; border-radius: 8px;
+            padding: 5px 15px; font-size: 22px; font-weight: bold; color: white;
+            display: flex; align-items: center; gap: 8px; pointer-events: auto;
+        }
+        .gem-icon { font-size: 24px; filter: drop-shadow(0 0 5px #00cec9); }
+
+        #xp-bar-container { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 400px; height: 20px; background: #333; border: 3px solid #555; border-radius: 10px; overflow: hidden; }
+        #xp-fill { height: 100%; background: #2ecc71; width: 0%; transition: width 0.3s; }
+        .overlay-text { position: absolute; top: -25px; left: 50%; transform: translateX(-50%); font-weight: bold; color: #333; text-shadow: 1px 1px 0 #fff; }
+       
+        #upgrade-menu {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85); padding: 30px; border-radius: 15px;
+            display: none; flex-direction: column; align-items: center; pointer-events: auto;
+            border: 4px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        #upgrade-menu h1 { color: #fff; margin-top: 0; margin-bottom: 20px; text-align: center; }
+        .upgrade-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .upgrade-btn {
+            background: #2d3436; color: white; border: 3px solid; padding: 15px 20px;
+            font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; min-width: 120px;
+        }
+        .upgrade-btn:hover { filter: brightness(1.3); transform: scale(1.05); }
+       
+        #hide-upgrade-menu {
+            margin-top: 25px; background: #e74c3c; color: white; font-weight: bold;
+            border: 2px solid #fff; padding: 10px 20px; border-radius: 5px; cursor: pointer; transition: 0.2s;
+        }
+        #hide-upgrade-menu:hover { background: #c0392b; transform: scale(1.05); }
+
+        #evolution-toggle {
+            position: absolute; top: 20px; right: 20px; display: none;
+            background: #9b59b6; color: white; border: 3px solid #333;
+            padding: 10px 20px; font-weight: bold; font-size: 16px; border-radius: 8px;
+            cursor: pointer; z-index: 10; transition: 0.2s; pointer-events: auto;
+        }
+        #evolution-toggle:hover { background: #8e44ad; transform: scale(1.05); }
+
+        #kill-feed {
+            position: absolute; top: 70px; right: 20px; pointer-events: none;
+            display: flex; flex-direction: column; gap: 8px; z-index: 100; align-items: flex-end;
+        }
+        .kill-msg {
+            background: rgba(0,0,0,0.7); color: #55efc4; padding: 10px 15px;
+            border-radius: 5px; border-left: 5px solid #00b894; font-weight: bold; font-size: 16px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            animation: slideInFadeOut 3s forwards;
+        }
+
+        #action-message {
+            position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 45px; font-weight: bold; color: white; text-shadow: 3px 3px 0 #000;
+            display: none; pointer-events: none; z-index: 200; text-align: center;
+        }
+
+        @keyframes slideInFadeOut {
+            0% { opacity: 0; transform: translateX(50px); }
+            10% { opacity: 1; transform: translateX(0); }
+            80% { opacity: 1; transform: translateX(0); }
+            100% { opacity: 0; transform: translateY(-20px); }
+        }
+
+    </style>
+</head>
+<body>
+
+<canvas id="gameCanvas" width="1357" height="924"></canvas>
+
+<div id="ui-layer">
+    <div id="start-screen">
+        <div id="spin-wheel-ui">
+            <h3>Daily Spin</h3>
+            <div id="wheel-container">
+                <div id="wheel-pointer"></div>
+                <canvas id="wheel-canvas" width="200" height="200"></canvas>
+            </div>
+            <button id="spin-btn">Spin Wheel</button>
+            <div id="spin-timer">Ready!</div>
+            <div id="spin-result"></div>
+        </div>
+
+        <div class="start-box">
+            <h1>tanks.io</h1>
+            <div id="save-stats">
+                High Score: <span id="ui-high-score" class="highlight-stat">0</span><br>
+                Gems: <span class="gem-icon">= </span> <span id="ui-gems" class="gem-stat">0</span>
+            </div>
+            <div id="home-cap-section" class="home-cap-section">
+                <h2>Upgrade Stat Caps</h2>
+                <div id="home-cap-grid" class="home-cap-grid"></div>
+                <div class="home-cap-note">Pick one stat at a time to raise its cap.</div>
+            </div>
+            <input type="text" id="player-name-input" placeholder="Enter Name" autocomplete="off" maxlength="15">
+            <input type="text" id="room-name-input" placeholder="Server Code" autocomplete="off" maxlength="20" value="public">
+            <button id="play-btn" class="btn btn-play">Play</button>
+            <button id="open-shop-btn" class="btn btn-shop">Tank Shop</button>
+            <button id="clear-save-btn" class="btn btn-clear-save" style="display: none;">Delete Saved Level</button>
+        </div>
+    </div>
+
+    <div id="shop-screen">
+        <div class="shop-box">
+            <h1>Tank Evolution Shop</h1>
+            <div class="shop-header-stats">
+                Your Gems: <span class="gem-icon">= </span> <span id="shop-gems" class="gem-stat">0</span>
+            </div>
+            <div id="shop-error-msg"></div>
+            <div class="shop-grid" id="shop-grid"></div>
+            <button id="close-shop-btn" class="btn btn-close">Back</button>
+        </div>
+    </div>
+
+    <div id="game-ui">
+        <div id="info-panel" class="panel">
+            <h2 id="tank-name" style="margin: 0 0 5px 0;">Basic Tank</h2>
+            <div id="tank-level">Level 1</div>
+            <div id="upgrade-points" style="color: #f1c40f; font-weight: bold; margin-top: 5px;">Upgrade Points: 0</div>
+            <div id="combat-status">Combat: SAFE</div>
+        </div>
+       
+        <div id="kill-feed"></div>
+        <div id="action-message">Saving lvls... 3</div>
+
+        <button id="evolution-toggle">Evolution Available!</button>
+
+        <div id="upgrade-menu">
+            <h1 id="upgrade-menu-title">Choose a Class:</h1>
+            <div class="upgrade-grid" id="upgrade-buttons"></div>
+            <button id="hide-upgrade-menu">Hide Menu</button>
+        </div>
+       
+        <div id="stats-panel" class="panel"></div>
+       
+        <div id="gem-display">
+            <span class="gem-icon">= </span> <span id="ingame-gems-count">0</span>
+        </div>
+
+        <div id="xp-bar-container">
+            <div class="overlay-text" id="score-text">Score: 0</div>
+            <div id="xp-fill"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- DATA & SAVE SYSTEM ---
+const SAVE_KEY = 'diepRemakeSave';
+const STAT_COUNT = 8;
+const BASE_STAT_CAP = 8;
+const MAX_STAT_CAP = 20;
+
+let globalData = {
+    highScore: 0,
+    gems: 0,
+    unlockedTanks: ['Basic'],
+    savedTank: null,
+    statCaps: Array(STAT_COUNT).fill(BASE_STAT_CAP)
+};
+
+const SHOP_ITEMS = [
+    { id: 'Octagon', price: 500 },
+    { id: 'Spikey', price: 1000 },
+    { id: 'Buckshot', price: 1500 },
+    { id: 'Barrage', price: 2000 },
+    { id: 'Freezer', price: 2500 },
+    { id: 'Machine', price: 2500 },
+    { id: 'Divider', price: 3000 },
+    { id: 'Destroyer', price: 4000 },
+    { id: 'Big Shot', price: 2000 },
+    { id: 'Ultra Tank', price: 20000 },
+    { id: 'Scatter', price: 12500 },
+    { id: 'Bouncy', price: 5000 },
+    { id: 'Gladiator', price: 10000 },
+    { id: 'Gattling Gunner', price: 10000 },
+    { id: 'Chainer', price: 20000 },
+    { id: 'Metric Tank', price: 100000 }
+];
+
+const SHOP_ITEM_IDS = SHOP_ITEMS.map(i => i.id);
+
+function loadGameData() {
+    let maxGems = 0;
+    let maxScore = 0;
+    let bestTanks = ['Basic'];
+    let bestSavedLevel = null;
+    let bestStatCaps = Array(STAT_COUNT).fill(BASE_STAT_CAP);
+
+    const keysToCheck = ['diepRemakeSave', 'diepRemakeSave_v1', 'diepRemakeSave_v2'];
+   
+    keysToCheck.forEach(key => {
+        const saved = localStorage.getItem(key);
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                if ((parsed.gems || 0) > maxGems) maxGems = parsed.gems;
+                if ((parsed.highScore || 0) > maxScore) maxScore = parsed.highScore;
+               
+                if (parsed.unlockedTanks) {
+                    parsed.unlockedTanks.forEach(t => {
+                        if (!bestTanks.includes(t)) bestTanks.push(t);
+                    });
+                }
+               
+                if (parsed.savedTank && typeof parsed.savedTank.level === 'number') {
+                    if (bestSavedLevel === null || parsed.savedTank.level > bestSavedLevel.level) {
+                        bestSavedLevel = { 
+                            level: parsed.savedTank.level, 
+                            xp: parsed.savedTank.xp || 0 
+                        };
+                    }
+                }
+
+                if (Array.isArray(parsed.statCaps)) {
+                    for (let i = 0; i < STAT_COUNT; i++) {
+                        if (typeof parsed.statCaps[i] === 'number') {
+                            bestStatCaps[i] = Math.max(bestStatCaps[i], parsed.statCaps[i]);
+                        }
+                    }
+                } else if (typeof parsed.statCap === 'number') {
+                    for (let i = 0; i < STAT_COUNT; i++) {
+                        bestStatCaps[i] = Math.max(bestStatCaps[i], parsed.statCap);
+                    }
+                }
+            } catch (e) {
+                console.error("Error parsing save key:", key);
+            }
+        }
+    });
+
+    globalData.gems = maxGems;
+    globalData.highScore = maxScore;
+    globalData.unlockedTanks = bestTanks;
+    globalData.savedTank = bestSavedLevel !== null ? bestSavedLevel : null;
+    globalData.statCaps = bestStatCaps.map(cap => Math.max(BASE_STAT_CAP, Math.min(MAX_STAT_CAP, cap)));
+   
+    updateStartScreenUI();
+   
+    saveGameData();
+    localStorage.removeItem('diepRemakeSave_v1');
+    localStorage.removeItem('diepRemakeSave_v2');
+}
+
+function saveGameData() {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+        highScore: globalData.highScore,
+        gems: globalData.gems,
+        unlockedTanks: globalData.unlockedTanks,
+        savedTank: globalData.savedTank,
+        statCaps: globalData.statCaps,
+        statCap: Math.min(...globalData.statCaps)
+    }));
+    updateStartScreenUI();
+}
+
+function updateStartScreenUI() {
+    document.getElementById('ui-high-score').textContent = Math.floor(globalData.highScore);
+    document.getElementById('ui-gems').textContent = globalData.gems;
+    document.getElementById('shop-gems').textContent = globalData.gems;
+    document.getElementById('ingame-gems-count').textContent = globalData.gems;
+   
+    let clearBtn = document.getElementById('clear-save-btn');
+    if (globalData.savedTank) {
+        clearBtn.style.display = 'block';
+        clearBtn.textContent = `Delete Saved Level (Lvl ${globalData.savedTank.level})`;
+    } else {
+        clearBtn.style.display = 'none';
+    }
+    if (typeof updateHomeStatCapsUI === 'function') updateHomeStatCapsUI();
+}
+
+document.getElementById('clear-save-btn').addEventListener('click', () => {
+    globalData.savedTank = null;
+    saveGameData();
+    localStorage.removeItem('diepRemakeSave_v1');
+    localStorage.removeItem('diepRemakeSave_v2');
+});
+
+function sanitizeRoomCode(raw) {
+    return (raw || 'public')
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, '')
+        .slice(0, 20) || 'public';
+}
+
+function netPost(message) {
+    if (!netChannel) return;
+    netChannel.postMessage({
+        ...message,
+        room: netRoomCode,
+        from: netClientId
+    });
+}
+
+function ensureRemoteTank(id, payload = {}) {
+    if (remotePlayers.has(id)) return remotePlayers.get(id);
+
+    const tank = new RemoteTank(payload.x || 0, payload.y || 0, payload.name || 'Guest', id);
+    tank.networkId = id;
+    tank.lastSeen = Date.now();
+    remotePlayers.set(id, tank);
+    return tank;
+}
+
+function syncLocalPlayerState(force = false) {
+    if (!netChannel || !player || player.dead || gameState !== 'PLAYING') return;
+
+    const now = Date.now();
+    if (!force && now - lastNetStateSend < 70) return;
+    lastNetStateSend = now;
+
+    netPost({
+        type: 'state',
+        name: player.name,
+        x: player.x,
+        y: player.y,
+        vx: player.vx,
+        vy: player.vy,
+        angle: player.angle,
+        level: player.level,
+        xp: player.xp,
+        score: player.score,
+        upgradePoints: player.upgradePoints,
+        upgradeTier: player.upgradeTier,
+        className: player.className,
+        stats: [...player.stats],
+        statCaps: [...player.statCaps],
+        hp: player.hp,
+        maxHp: player.maxHp,
+        barrelIndex: player.barrelIndex,
+        alpha: player.alpha,
+        dead: player.dead
+    });
+}
+
+function broadcastLocalShot(firedBarrelIndex) {
+    if (!netChannel || !player || player.dead || gameState !== 'PLAYING') return;
+    netPost({
+        type: 'shot',
+        name: player.name,
+        x: player.x,
+        y: player.y,
+        vx: player.vx,
+        vy: player.vy,
+        angle: player.angle,
+        level: player.level,
+        xp: player.xp,
+        score: player.score,
+        upgradePoints: player.upgradePoints,
+        upgradeTier: player.upgradeTier,
+        className: player.className,
+        stats: [...player.stats],
+        statCaps: [...player.statCaps],
+        hp: player.hp,
+        maxHp: player.maxHp,
+        barrelIndex: firedBarrelIndex,
+        alpha: player.alpha
+    });
+}
+
+function startNetworkSession() {
+    stopNetworkSession();
+    remotePlayers.clear();
+    netRoomCode = sanitizeRoomCode(roomNameInput ? roomNameInput.value : 'public');
+    netChannel = new BroadcastChannel(`${NETWORK_CHANNEL_PREFIX}${netRoomCode}`);
+
+    netChannel.onmessage = (event) => {
+        const msg = event.data || {};
+        if (msg.room !== netRoomCode || msg.from === netClientId) return;
+
+        if (msg.type === 'leave') {
+            remotePlayers.delete(msg.from);
+            return;
+        }
+
+        if (msg.type === 'state' || msg.type === 'shot') {
+            const remote = ensureRemoteTank(msg.from, msg);
+            remote.lastSeen = Date.now();
+            remote.applyNetState(msg);
+
+            if (msg.type === 'shot') {
+                remote.barrelIndex = typeof msg.barrelIndex === 'number' ? msg.barrelIndex : remote.barrelIndex;
+                remote.lastShot = performance.now();
+                remote.shoot();
+            }
+        }
+    };
+
+    netPost({
+        type: 'hello',
+        name: playerNameInput ? playerNameInput.value || 'Player' : 'Player',
+        x: 0, y: 0,
+        level: 1, xp: 0, score: 0,
+        upgradePoints: 0, upgradeTier: 0,
+        className: 'Basic',
+        stats: [0,0,0,0,0,0,0,0],
+        statCaps: Array(STAT_COUNT).fill(BASE_STAT_CAP),
+        hp: 100, maxHp: 100,
+        barrelIndex: 0,
+        alpha: 1
+    });
+}
+
+function stopNetworkSession() {
+    if (netChannel) {
+        try { netPost({ type: 'leave' }); } catch (e) {}
+        try { netChannel.close(); } catch (e) {}
+    }
+    netChannel = null;
+}
+
+window.addEventListener('beforeunload', stopNetworkSession);
+
+// --- SPIN WHEEL LOGIC & ANIMATION ---
+const SPIN_COOLDOWN_MS = 60 * 60 * 1000;
+let currentWheelRotation = 0;
+
+const spinPrizes = [
+    { name: "1k Gems", chance: 0.40, color: "#3498db" },
+    { name: "1k EXP", chance: 0.40, color: "#2ecc71" },
+    { name: "5k Gems", chance: 0.08, color: "#0984e3" },
+    { name: "5k EXP", chance: 0.08, color: "#27ae60" },
+    { name: "25k EXP", chance: 0.02, color: "#f1c40f" },
+    { name: "Cluster", chance: 0.015, color: "#9b59b6" },
+    { name: "Blender", chance: 0.005, color: "#e74c3c" }
+];
+
+function renderWheel() {
+    const canvas = document.getElementById("wheel-canvas");
+    const ctx = canvas.getContext("2d");
+    const numSegments = spinPrizes.length;
+    const arcSize = (2 * Math.PI) / numSegments;
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = canvas.width / 2;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < numSegments; i++) {
+        const angle = i * arcSize;
+        
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, angle, angle + arcSize, false);
+        ctx.lineTo(centerX, centerY);
+        ctx.fillStyle = spinPrizes[i].color;
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#222";
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(angle + arcSize / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 13px sans-serif";
+        ctx.shadowColor = 'rgba(0,0,0,0.9)';
+        ctx.shadowBlur = 4;
+        ctx.fillText(spinPrizes[i].name, radius - 15, 5);
+        ctx.restore();
+    }
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 15, 0, 2 * Math.PI, false);
+    ctx.fillStyle = "#333";
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#fff";
+    ctx.stroke();
+}
+
+function updateSpinUI() {
+    const lastSpin = localStorage.getItem('diepRemakeLastSpin');
+    const btn = document.getElementById('spin-btn');
+    const timer = document.getElementById('spin-timer');
+    
+    if (lastSpin && Date.now() - parseInt(lastSpin) < SPIN_COOLDOWN_MS) {
+        btn.disabled = true;
+        const remaining = SPIN_COOLDOWN_MS - (Date.now() - parseInt(lastSpin));
+        const mins = Math.ceil(remaining / 60000);
+        timer.textContent = `Next spin in ${mins}m`;
+    } else {
+        btn.disabled = false;
+        timer.textContent = "Ready to spin!";
+    }
+}
+
+document.getElementById('spin-btn').addEventListener('click', () => {
+    const lastSpin = localStorage.getItem('diepRemakeLastSpin');
+    if (lastSpin && Date.now() - parseInt(lastSpin) < SPIN_COOLDOWN_MS) return;
+
+    const btn = document.getElementById('spin-btn');
+    btn.disabled = true;
+    document.getElementById('spin-result').textContent = "Spinning...";
+    document.getElementById('spin-result').style.color = "#fff";
+    
+    // RNG to pick winner based on accurate probabilities
+    const r = Math.random();
+    let cumulative = 0;
+    let winningIndex = 0;
+    for (let i = 0; i < spinPrizes.length; i++) {
+        cumulative += spinPrizes[i].chance;
+        if (r <= cumulative) {
+            winningIndex = i;
+            break;
+        }
+    }
+
+    // Calculate rotation to make the winning slice stop exactly at the top pointer
+    const numSegments = spinPrizes.length;
+    const sliceAngle = 360 / numSegments;
+    const targetDegree = 270 - (winningIndex * sliceAngle + sliceAngle / 2);
+    
+    let currentDeg = currentWheelRotation % 360;
+    if (currentDeg < 0) currentDeg += 360;
+    
+    let diff = targetDegree - currentDeg;
+    if (diff < 0) diff += 360; 
+
+    // Add a tiny random offset so it doesn't land dead center every single time
+    const offset = (Math.random() - 0.5) * (sliceAngle * 0.7); 
+    diff += offset;
+
+    const extraSpins = 360 * 6; // 6 full exciting spins
+    currentWheelRotation += (extraSpins + diff);
+
+    const canvas = document.getElementById('wheel-canvas');
+    canvas.style.transition = "transform 4s cubic-bezier(0.2, 0.8, 0.2, 1)";
+    canvas.style.transform = `rotate(${currentWheelRotation}deg)`;
+
+    // Wait for the CSS transition to finish before awarding prize
+    setTimeout(() => {
+        awardSpinPrize(winningIndex);
+    }, 4000);
+});
+
+function awardSpinPrize(index) {
+    const prize = spinPrizes[index];
+    let won = "";
+    
+    if (prize.name === "1k Gems") { globalData.gems += 1000; won = "1k Gems!"; }
+    else if (prize.name === "1k EXP") { addSavedExp(1000); won = "1k EXP!"; }
+    else if (prize.name === "5k Gems") { globalData.gems += 5000; won = "5k Gems!"; }
+    else if (prize.name === "5k EXP") { addSavedExp(5000); won = "5k EXP!"; }
+    else if (prize.name === "25k EXP") { addSavedExp(25000); won = "25k EXP!"; }
+    else if (prize.name === "Cluster") { unlockSpecialTank("Cluster Tank"); won = "Cluster Tank!"; }
+    else if (prize.name === "Blender") { unlockSpecialTank("Blender Tank"); won = "Blender Tank!"; }
+
+    document.getElementById('spin-result').textContent = `Won: ${won}`;
+    document.getElementById('spin-result').style.color = prize.color;
+    
+    localStorage.setItem('diepRemakeLastSpin', Date.now().toString());
+    saveGameData();
+    updateStartScreenUI();
+    updateSpinUI();
+}
+
+function addSavedExp(amount) {
+    if (!globalData.savedTank) {
+        globalData.savedTank = { level: 1, xp: 0 };
+    }
+    if (typeof globalData.savedTank.xp !== 'number') {
+        globalData.savedTank.xp = 0;
+    }
+    globalData.savedTank.xp += amount;
+    
+    // Auto calculate leveling up the saved tank
+    let xpNeeded = getXpNeeded(globalData.savedTank.level);
+    while (globalData.savedTank.xp >= xpNeeded && globalData.savedTank.level < 60) {
+        globalData.savedTank.level++;
+        globalData.savedTank.xp -= xpNeeded;
+        xpNeeded = getXpNeeded(globalData.savedTank.level);
+    }
+    saveGameData();
+    updateStartScreenUI();
+}
+
+function unlockSpecialTank(tankName) {
+    if (!globalData.unlockedTanks.includes(tankName)) {
+        globalData.unlockedTanks.push(tankName);
+    } else {
+        globalData.gems += 5000; 
+        setTimeout(() => { document.getElementById('spin-result').textContent += " (Dupe: +5k Gems)"; }, 1500);
+    }
+}
+
+
+// --- SHOP LOGIC ---
+const startScreen = document.getElementById('start-screen');
+const shopScreen = document.getElementById('shop-screen');
+const shopGrid = document.getElementById('shop-grid');
+
+document.getElementById('open-shop-btn').addEventListener('click', () => {
+    startScreen.style.display = 'none';
+    shopScreen.style.display = 'flex';
+    renderShop();
+});
+
+document.getElementById('close-shop-btn').addEventListener('click', () => {
+    shopScreen.style.display = 'none';
+    startScreen.style.display = 'flex';
+});
+
+function renderShop() {
+    shopGrid.innerHTML = '';
+   
+    SHOP_ITEMS.forEach(item => {
+        const config = TANK_CLASSES[item.id];
+        if (!config) return;
+
+        const isUnlocked = globalData.unlockedTanks.includes(item.id);
+
+        const el = document.createElement('div');
+        el.className = 'shop-item';
+        el.style.borderColor = config.color;
+
+        let buttonHTML = isUnlocked
+            ? `<button class="shop-btn btn-unlocked" disabled>Unlocked</button>`
+            : `<button class="shop-btn btn-buy" onclick="buyTank('${item.id}', ${item.price})">Unlock (=  ${item.price})</button>`;
+
+        el.innerHTML = `
+            <h3>${config.name}</h3>
+            <canvas id="shop-canvas-${item.id}" width="100" height="100" class="shop-item-canvas"></canvas>
+            ${buttonHTML}
+        `;
+        shopGrid.appendChild(el);
+    });
+
+    requestAnimationFrame(() => {
+        SHOP_ITEMS.forEach(item => {
+            const c = document.getElementById('shop-canvas-' + item.id);
+            if(c) {
+                const ctx = c.getContext('2d');
+                ctx.save();
+                ctx.translate(c.width/2, c.height/2);
+               
+                let dummy = new Tank(0,0,true);
+                dummy.setClass(item.id);
+                dummy.color = TANK_CLASSES[item.id].color;
+                dummy.alpha = 1;
+                dummy.name = "";
+                dummy.hp = dummy.maxHp;
+                dummy.draw(ctx);
+               
+                ctx.restore();
+            }
+        });
+    });
+}
+
+window.buyTank = function(id, price) {
+    if (globalData.gems >= price) {
+        globalData.gems -= price;
+        globalData.unlockedTanks.push(id);
+        saveGameData();
+        renderShop();
+    } else {
+        let errMsg = document.getElementById('shop-error-msg');
+        errMsg.textContent = "Not enough gems!";
+        errMsg.style.opacity = 1;
+        setTimeout(() => errMsg.style.opacity = 0, 2500);
+    }
+}
+
+// --- GAME LOGIC ---
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const MAP_SIZE = 8000;
+const MAX_SHAPES = 1000;
+const MAX_BOTS = 10;
+const COMBAT_TIMER_MAX = 15;
+
+let gameState = 'START';
+const playerNameInput = document.getElementById('player-name-input');
+const roomNameInput = document.getElementById('room-name-input');
+
+const NETWORK_CHANNEL_PREFIX = 'tanks-io-room-';
+let netChannel = null;
+let netClientId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+let netRoomCode = 'public';
+let lastNetStateSend = 0;
+let lastNetCleanup = 0;
+let remotePlayers = new Map();
+
+// ---------------------------------
+const BOT_NAMES = ['[MG]Spin2Team', 'SniperKing', 'ProGamer', 'lag', 'hello', 'noob', 'Destroyer', 'Player1', 'TankMaster', 'GitGud', 'Anonymous', 'Fighter', 'Overlord', 'Arena Closer', 'John', 'Oof', 'TryHard'];
+
+const TANK_CLASSES = {
+    'Basic': { name: 'Basic Tank', color: '#00b894', shape: 'circle', barrels: [{x:0, y:0, w:35, h:15, angle:0}], reloadMod: 1.0, dmgMod: 1.0, hasRecoil: false },
+    'Double': { name: 'Double', color: '#0984e3', shape: 'circle', fireType: 'offset', barrels: [{x:0, y:-10, w:35, h:12, angle:0}, {x:0, y:10, w:35, h:12, angle:0}], reloadMod: 0.5, dmgMod: 0.7, hasRecoil: false },
+    'Side Shooter': { name: 'Side Shooter', color: '#6c5ce7', shape: 'circle', fireType: 'simultaneous', barrels: [{x:0, y:0, w:35, h:15, angle:0}, {x:0, y:0, w:30, h:15, angle: Math.PI, back: true}], reloadMod: 1.0, dmgMod: 1.0, hasRecoil: false },
+    'Sniper': { name: 'Sniper', color: '#27ae60', shape: 'circle', barrels: [{x:0, y:0, w:50, h:12, angle:0}], reloadMod: 2.5, dmgMod: 2.5, speedMod: 0.9, bulletSpeed: 1.8, bulletLife: 1.5, hasRecoil: true, penMod: 2.5 },
+    'Minigun': { name: 'Minigun', color: '#e17055', shape: 'circle', barrels: [{x:0, y:0, w:35, h:22, angle:0}], reloadMod: 0.4, dmgMod: 0.7, spread: 0.25, hasRecoil: true },
+    'Rammer': { name: 'Rammer', color: '#b2bec3', shape: 'square', hpMod: 2.5, rammer: true, rammerCanShoot: false, bodyDamage: 1.4, speedMod: 1.2, barrels: [], hasRecoil: false },
+    'Flamethrower': { name: 'Flamethrower', color: '#e67e22', shape: 'circle', barrels: [{x:0, y:0, w:25, h:18, angle:0}], reloadMod: 0.1, dmgMod: 0.3, spread: 0.6, bulletSpeed: 4.0, bulletLife: 0.08, hasRecoil: false },
+    'Triple': { name: 'Triple', color: '#0984e3', shape: 'circle', fireType: 'offset', barrels: [{x:0, y:-15, w:35, h:12, angle:0}, {x:0, y:0, w:40, h:12, angle:0}, {x:0, y:15, w:35, h:12, angle:0}], reloadMod: 0.35, dmgMod: 0.7, hasRecoil: false },
+    'Quad Cannon': { name: 'Quad Cannon', color: '#27ae60', shape: 'circle', fireType: 'offset', barrels: [{x:0, y:-15, w:30, h:12, angle:0}, {x:0, y:-7.5, w:30, h:12, angle:0}, {x:0, y:7.5, w:30, h:12, angle:0}, {x:0, y:15, w:30, h:12, angle:0}], reloadMod: 0.3, dmgMod: 0.5, bulletSize: 0.8, hasRecoil: false },
+    'Fourway': { name: 'Fourway', color: '#6c5ce7', shape: 'circle', fireType: 'simultaneous', barrels: [{x:0, y:0, w:35, h:15, angle:0}, {x:0, y:0, w:35, h:15, angle: Math.PI/2}, {x:0, y:0, w:35, h:15, angle: Math.PI}, {x:0, y:0, w:35, h:15, angle: -Math.PI/2}], reloadMod: 1.0, dmgMod: 1.0, hasRecoil: false },
+    'Scout': { name: 'Scout', color: '#27ae60', shape: 'circle', barrels: [{x:0, y:0, w:55, h:12, angle:0}], reloadMod: 2.0, dmgMod: 2.5, speedMod: 1.1, bulletSpeed: 2.0, bulletLife: 1.5, invisible: true, hasRecoil: true, penMod: 0.4 },
+    'Gulper': { name: 'Gulper', color: '#e67e22', shape: 'circle', barrels: [{x:0, y:0, w:30, h:40, angle:0}], reloadMod: 3.5, dmgMod: 4.0, bulletSpeed: 0.3, bulletLife: 2.5, penMod: 4.0, bulletSize: 2.0, recoilMod: 4.0,  hasRecoil: true },
+    'Autogunner': { name: 'Autogunner', color: '#e17055', shape: 'circle', barrels: [{x:0, y:0, w:35, h:22, angle:0}], reloadMod: 0.35, dmgMod: 0.7, spread: 0.25, autoTurret: true, hasRecoil: true },
+    'Gattling Gunner': { name: 'Chaingun', color: '#00b894', shape: 'circle', barrels: [{x:0, y:0, w:35, h:22, angle:0}], reloadMod: 0.06, dmgMod: 0.9, penMod: 1.1, bulletSize: 1.6, ammoMax: 28, ammoReloadFrames: 60, hasRecoil: false },
+    'Grinder': { name: 'Grinder', color: '#b2bec3', shape: 'hexagon', hpMod: 3.5, rammer: true, rammerCanShoot: false, bodyDamage: 2.25, speedMod: 1.4, barrels: [], hasRecoil: false },
+    'Double Flame': { name: 'Double Flame', color: '#e67e22', shape: 'circle', fireType: 'offset', barrels: [{x:0, y:-8, w:25, h:15, angle:0}, {x:0, y:8, w:25, h:15, angle:0}], reloadMod: 0.1, dmgMod: 0.3, spread: 0.7, bulletSpeed: 4.5, bulletLife: 0.1, hasRecoil: false },
+    
+    'Bouncy': { name: 'Bouncy', color: '#fd79a8', shape: 'circle', fireType: 'simultaneous', barrels: [
+        {x:0, y:-8, w:38, h:12, angle: 0},
+        {x:0, y:8, w:38, h:12, angle: 0}
+    ], reloadMod: 0.8, dmgMod: 0.9, bulletSpeed: 1.3, bulletLife: 1.8, bouncyBullets: true, bounces: 4, speedMod: 1.05, hasRecoil: false },
+
+    'Gladiator': { name: 'Gladiator', color: '#ff7675', shape: 'circle', fireType: 'simultaneous', barrels: [
+        {x:0, y:-18, w:34, h:10, angle: 0, dmgMod: 0.75, bulletSpeed: 2.5},
+        {x:0, y:18, w:34, h:10, angle: 0, dmgMod: 0.75, bulletSpeed: 2.5},
+        {x:0, y:-10, w:28, h:10, angle: 0, dmgMod: 0.6, bulletSpeed: 2.35},
+        {x:0, y:10, w:28, h:10, angle: 0, dmgMod: 0.6, bulletSpeed: 2.35}
+    ], reloadMod: 0.35, dmgMod: 0.8, bulletSpeed: 2.5, bulletLife: 0.35, speedMod: 1.02, hasRecoil: true },
+
+    'Chainer': { name: 'Chainer', color: '#00d2d3', shape: 'circle', fireType: 'simultaneous', barrels: [
+        {x:0, y:-14, w:34, h:12, angle: -0.05},
+        {x:0, y:-7, w:34, h:12, angle: -0.03},
+        {x:0, y:0, w:34, h:12, angle: 0},
+        {x:0, y:7, w:34, h:12, angle: 0.03},
+        {x:0, y:14, w:34, h:12, angle: 0.05}
+    ], reloadMod: 1.6, dmgMod: 0.7, bulletSpeed: 3.0, bulletLife: 1.8, spread: 0.015, speedMod: 1.0, hasRecoil: false },
+
+    'Metric Tank': { name: 'Metric Tank', color: '#f368e0', shape: 'circle', fireType: 'simultaneous', speedMod: 1.05, barrels: [
+        {x:0, y:-18, w:45, h:14, angle: 0, dmgMod: 0.85, bulletSpeed: 2.7},
+        {x:0, y:0, w:55, h:18, angle: 0, dmgMod: 1.0, bulletSpeed: 2.7},
+        {x:0, y:18, w:45, h:14, angle: 0, dmgMod: 0.85, bulletSpeed: 2.7},
+        {x:0, y:-25, w:25, h:10, angle: Math.PI, dmgMod: 0.3, bulletSpeed: 2.5, backThrust: 0.2},
+        {x:0, y:-15, w:25, h:10, angle: Math.PI, dmgMod: 0.3, bulletSpeed: 2.5, backThrust: 0.2},
+        {x:0, y:-5, w:25, h:10, angle: Math.PI, dmgMod: 0.3, bulletSpeed: 2.5, backThrust: 0.2},
+        {x:0, y:5, w:25, h:10, angle: Math.PI, dmgMod: 0.3, bulletSpeed: 2.5, backThrust: 0.2},
+        {x:0, y:15, w:25, h:10, angle: Math.PI, dmgMod: 0.3, bulletSpeed: 2.5, backThrust: 0.2},
+        {x:0, y:25, w:25, h:10, angle: Math.PI, dmgMod: 0.3, bulletSpeed: 2.5, backThrust: 0.2}
+    ], reloadMod: 0.25, dmgMod: 0.95, bulletSpeed: 2.7, bulletLife: 1.2, hasRecoil: true },
+
+    'Destroyer': { name: 'Destroyer', color: '#0984e3', shape: 'circle', fireType: 'offset', barrels: [
+        {x:0, y:-20, w:28, h:8, angle: -0.2, bulletSize: 0.5},
+        {x:0, y:-10, w:35, h:12, angle: -0.1},
+        {x:0, y:0, w:40, h:15, angle: 0},
+        {x:0, y:10, w:35, h:12, angle: 0.1},
+        {x:0, y:20, w:28, h:8, angle: 0.2, bulletSize: 0.5}
+    ], reloadMod: 0.2, dmgMod: 0.6, hasRecoil: false },
+   
+    'Machine': { name: 'Machine', color: '#e17055', shape: 'circle', barrels: [], autoTurrets: [
+        {x: 12, y: 0}, {x: 4, y: 11}, {x: -9, y: 7}, {x: -9, y: -7}, {x: 4, y: -11}
+    ], reloadMod: 1.5, dmgMod: 0.35, hpMod: 1.0 },
+   
+    'Divider': { name: 'Divider', color: '#27ae60', shape: 'circle', barrels: [{x:0, y:0, w:70, h:16, angle:0}], reloadMod: 3.0, dmgMod: 4.5, speedMod: 1.1, bulletSpeed: 3.0, bulletLife: 2.0, invisible: true, hasRecoil: true, penMod: 0.6 },
+   
+    'Freezer': { name: 'Freezer', color: '#74b9ff', shape: 'circle', fireType: 'offset', barrels: [{x:0, y:-10, w:30, h:18, angle:0}, {x:0, y:10, w:30, h:18, angle:0}], reloadMod: 0.1, dmgMod: 0.25, spread: 0.7, bulletSpeed: 4.5, bulletLife: 0.1, hasRecoil: false, freezes: true, bulletColor: '#0984e3' },
+   
+    'Spikey': { name: 'Spikey', color: '#2d3436', shape: 'hexagon', hpMod: 5.0, rammer: true, rammerCanShoot: false, bodyDamage: 2.5, speedMod: 1.2, barrels: [], hasRecoil: false },
+   
+    'Rocket': { name: 'Rocket', color: '#6c5ce7', shape: 'circle', fireType: 'simultaneous', hpMod: 1.5, barrels: [
+        {x:0, y:0, w:35, h:15, angle:0},
+        {x:0, y:16, w:25, h:12, angle: Math.PI*0.8, backThrust: 2.0},
+        {x:0, y:-16, w:25, h:12, angle: -Math.PI*0.8, backThrust: 2.0}
+    ], reloadMod: 0.92, dmgMod: 1.0, spread: 0.02, hasRecoil: true },
+
+    'Buckshot': { name: 'Buckshot', color: '#27ae60', shape: 'circle', fireType: 'simultaneous', barrels: [
+        {x:0, y:0, w:45, h:12, angle: 0},
+        {x:0, y:0, w:40, h:10, angle: -0.15},
+        {x:0, y:0, w:40, h:10, angle: 0.15},
+        {x:0, y:0, w:35, h:8, angle: -0.3},
+        {x:0, y:0, w:35, h:8, angle: 0.3}
+    ], reloadMod: 2.5, dmgMod: 0.6, speedMod: 1.1, bulletSpeed: 2.2, bulletLife: 0.6, hasRecoil: true, penMod: 0.4, spread: 0.1 },
+
+    'Barrage': { name: 'Barrage', color: '#0984e3', shape: 'circle', fireType: 'simultaneous', barrels: [
+        {x:0, y:0, w:30, h:35, angle: 0, bulletSize: 2.0, dmgMod: 1.5},
+        {x:0, y:0, w:45, h:25, angle: 0, bulletSize: 1.2, dmgMod: 1.0},
+        {x:0, y:0, w:60, h:15, angle: 0, bulletSize: 0.8, dmgMod: 0.7},
+        {x:0, y:0, w:75, h:8,  angle: 0, bulletSize: 0.4, dmgMod: 0.4}
+    ], reloadMod: 1.5, dmgMod: 1.0, hasRecoil: true },
+
+    'Octagon': { name: 'Octagon', color: '#6c5ce7', shape: 'circle', fireType: 'simultaneous', barrels: [
+        {x:0, y:0, w:35, h:15, angle: 0}, {x:0, y:0, w:35, h:15, angle: Math.PI/4},
+        {x:0, y:0, w:35, h:15, angle: Math.PI/2}, {x:0, y:0, w:35, h:15, angle: 3*Math.PI/4},
+        {x:0, y:0, w:35, h:15, angle: Math.PI}, {x:0, y:0, w:35, h:15, angle: 5*Math.PI/4},
+        {x:0, y:0, w:35, h:15, angle: 3*Math.PI/2}, {x:0, y:0, w:35, h:15, angle: 7*Math.PI/4}
+    ], reloadMod: 1.5, dmgMod: 0.8, hasRecoil: false },
+    'Big Shot': { name: 'Big Shot', color: '#e67e22', shape: 'circle', barrels: [{x:0, y:0, w:28, h:55, angle:0}], reloadMod: 3.5, dmgMod: 5.0, bulletSpeed: 0.3, bulletLife: 2.5, penMod: 5.0, bulletSize:2.8, hasRecoil: true },
+    
+    'Scatter': {
+        name: 'Scatter', color: '#e67e22', shape: 'circle', fireType: 'simultaneous',
+        barrels: Array.from({ length: 12 }, (_, i) => ({ x: 0, y: 0, w: 35, h: 15, angle: (-Math.PI/2) + (Math.PI/11) * i })),
+        reloadMod: 1.6, dmgMod: 0.8, spread: 0.12, speedMod: 0.85
+    },
+   
+    'Ultra Tank': {
+        name: 'Ultra Tank', color: '#ff2ecc', shape: 'circle', fireType: 'simultaneous',
+        barrels: Array.from({ length: 20 }, (_, i) => ({ x: 0, y: 0, w: 40, h: 15, angle: (Math.PI * 2 / 20) * i })),
+        reloadMod: 0.72, dmgMod: 0.65, hasRecoil: false 
+    },
+
+    // SPIN REWARD TANKS
+    'Cluster Tank': { name: 'Cluster Tank', color: '#8e44ad', shape: 'circle', fireType: 'simultaneous', barrels: [
+        {x:0, y:0, w:45, h:18, angle: 0},
+        {x:0, y:0, w:35, h:12, angle: -0.2}, {x:0, y:0, w:35, h:12, angle: 0.2},
+        {x:0, y:0, w:25, h:10, angle: -0.4}, {x:0, y:0, w:25, h:10, angle: 0.4}
+    ], reloadMod: 1.5, dmgMod: 0.8, spread: 0.15, hasRecoil: true },
+    
+    'Blender Tank': { name: 'Blender Tank', color: '#c0392b', shape: 'hexagon', hpMod: 6.0, rammer: true, rammerCanShoot: false, bodyDamage: 8.0, speedMod: 1.6, barrels: [], hasRecoil: false }
+};
+
+const UPGRADE_TREE = {
+    15: ['Double', 'Side Shooter', 'Sniper', 'Minigun', 'Rammer', 'Flamethrower', 'Cluster Tank', 'Blender Tank'],
+
+    30: {
+        'Double': ['Triple', 'Quad Cannon'],
+        'Side Shooter': ['Fourway'],
+        'Sniper': ['Scout', 'Bouncy'],
+        'Minigun': ['Autogunner', 'Gattling Gunner', 'Gulper'],
+        'Rammer': ['Grinder'],
+        'Flamethrower': ['Double Flame']
+    },
+
+    45: {
+        'Triple': ['Destroyer', 'Barrage'],
+        'Fourway': ['Rocket', 'Octagon'],
+        'Scout': ['Divider', 'Buckshot'],
+        'Autogunner': ['Machine'],
+        'Grinder': ['Spikey'],
+        'Double Flame': ['Freezer'],
+        'Gulper': ['Big Shot']
+    },
+
+    60: {
+        'Octagon': ['Ultra Tank'],
+        'Destroyer': ['Scatter'],
+        'Gattling Gunner': ['Chainer', 'Gladiator'],
+        'Sniper': ['Gladiator'],
+        'Bouncy': ['Gladiator'],
+        'Rocket': ['Metric Tank']
+    }
+};
+
+const keys = {};
+const mouse = { x: canvas.width/2, y: canvas.height/2, down: false };
+let camera = { x: 0, y: 0 };
+
+window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+window.addEventListener('mousedown', () => mouse.down = true);
+window.addEventListener('mouseup', () => mouse.down = false);
+window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+
+const STAT_NAMES = ['Health Regen', 'Max Health', 'Tank Speed', 'Bullet Speed', 'Bullet Penetration', 'Bullet Damage', 'Reload', 'Body Damage'];
+const STAT_COLORS = ['#e67e22', '#e74c3c', '#3498db', '#f1c40f', '#f39c12', '#c0392b', '#2ecc71', '#8e44ad'];
+
+const homeCapGrid = document.getElementById('home-cap-grid');
+const STAT_EFFECT_MULTIPLIER = 0.35;
+
+function getStatCapUpgradeCost(currentCap) {
+    if (currentCap < 8) return 1500;
+    if (currentCap === 8) return 1500;
+    if (currentCap === 9) return 3500;
+    return Math.floor(3500 * Math.pow(1.7, currentCap - 9));
+}
+
+function getPlayerStatCaps() {
+    if (!globalData.statCaps || !Array.isArray(globalData.statCaps)) {
+        globalData.statCaps = Array(STAT_COUNT).fill(BASE_STAT_CAP);
+    }
+    return globalData.statCaps;
+}
+
+function getStatCapForIndex(index, caps = getPlayerStatCaps()) {
+    return Math.max(BASE_STAT_CAP, Math.min(MAX_STAT_CAP, caps[index] ?? BASE_STAT_CAP));
+}
+
+function renderHomeStatCapShop() {
+    if (!homeCapGrid) return;
+    homeCapGrid.innerHTML = '';
+    STAT_NAMES.forEach((name, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'home-cap-btn';
+        btn.id = `home-cap-btn-${i}`;
+        btn.addEventListener('click', () => upgradeHomeStatCap(i));
+        homeCapGrid.appendChild(btn);
+    });
+    updateHomeStatCapsUI();
+}
+
+function updateHomeStatCapsUI() {
+    const grid = document.getElementById('home-cap-grid');
+    if (!grid) return;
+    const caps = getPlayerStatCaps();
+    STAT_NAMES.forEach((name, i) => {
+        const btn = document.getElementById(`home-cap-btn-${i}`);
+        if (!btn) return;
+        const cap = getStatCapForIndex(i, caps);
+        const nextCost = cap >= MAX_STAT_CAP ? 'MAXED' : `${getStatCapUpgradeCost(cap)} = `;
+        btn.innerHTML = `${name}<span class="home-cap-cost">${cap}/${MAX_STAT_CAP} " ${nextCost}</span>`;
+        btn.disabled = cap >= MAX_STAT_CAP || globalData.gems < getStatCapUpgradeCost(cap);
+    });
+}
+
+function upgradeHomeStatCap(index) {
+    const caps = getPlayerStatCaps();
+    const currentCap = getStatCapForIndex(index, caps);
+    if (currentCap >= MAX_STAT_CAP) return;
+    const cost = getStatCapUpgradeCost(currentCap);
+    if (globalData.gems < cost) return;
+
+    globalData.gems -= cost;
+    caps[index] = currentCap + 1;
+
+    if (player) player.statCaps = [...caps];
+    saveGameData();
+    updateStartScreenUI();
+    updateUI();
+}
+
+renderHomeStatCapShop();
+loadGameData();
+renderWheel(); 
+setInterval(updateSpinUI, 60000); 
+updateSpinUI();
+
+const HP_STAT_BONUS = 0.7;
+const BODY_DAMAGE_TICK_MS = 100;
+const CENTER_XP_ZONE_RADIUS = 760;
+const CENTER_XP_MULTIPLIER = 3;
+
+function isInCenterXpZone(entity) {
+    if (!entity || typeof entity.x !== 'number' || typeof entity.y !== 'number') return false;
+    return Math.hypot(entity.x, entity.y) <= CENTER_XP_ZONE_RADIUS;
+}
+
+function getXpMultiplierForEntity(entity) {
+    return isInCenterXpZone(entity) ? CENTER_XP_MULTIPLIER : 1;
+}
+
+function getXpNeeded(level) {
+    return Math.floor(20 * level + Math.pow(Math.max(0, level - 10), 2) * 1.5);
+}
+
+function getKillGemReward(victimLevel) {
+    const lvl = Math.max(1, Number(victimLevel) || 1);
+    return Math.max(25, Math.round(25 + (lvl * 12)));
+}
+
+function showKillMessage(targetName, gemReward) {
+    if (typeof targetName !== 'string') return;
+    const cleanName = targetName.trim();
+    if (!cleanName || cleanName.toLowerCase() === 'undefined') return;
+
+    const feed = document.getElementById('kill-feed');
+    const msg = document.createElement('div');
+    msg.className = 'kill-msg';
+    const reward = Math.max(0, Math.floor(Number(gemReward) || 0));
+    msg.textContent = reward > 0 ? `Eliminated ${cleanName}! (+${reward} = )` : `Eliminated ${cleanName}!`;
+    feed.appendChild(msg);
+    setTimeout(() => { if (msg.parentNode === feed) feed.removeChild(msg); }, 3000);
+}
+
+function updateUI() {
+    if (gameState !== 'PLAYING' || !player) return;
+   
+    document.getElementById('tank-name').textContent = player.config.name;
+    document.getElementById('tank-level').textContent = `Level ${player.level}`;
+    document.getElementById('score-text').textContent = `Score: ${Math.floor(player.score)}`;
+    document.getElementById('upgrade-points').textContent = `Upgrade Points: ${player.upgradePoints}`;
+    document.getElementById('ingame-gems-count').textContent = globalData.gems;
+   
+    let xpNeeded = getXpNeeded(player.level);
+    let percent = Math.min(100, (player.xp / xpNeeded) * 100);
+    document.getElementById('xp-fill').style.width = `${percent}%`;
+}
+
+function checkPlayerUpgrades() {
+    if (!player || player.dead || gameState !== 'PLAYING') return;
+   
+    if (document.getElementById('upgrade-menu').style.display === 'flex') return;
+    if (document.getElementById('evolution-toggle').style.display === 'block') return;
+
+    let availableUpgrades = null;
+    let targetTier = 0;
+
+    if (player.level >= 15 && player.upgradeTier === 0) {
+        availableUpgrades = UPGRADE_TREE[15];
+        targetTier = 1;
+    } else if (player.level >= 30 && player.upgradeTier === 1) {
+        availableUpgrades = UPGRADE_TREE[30][player.className];
+        targetTier = 2;
+    } else if (player.level >= 45 && player.upgradeTier === 2) {
+        availableUpgrades = UPGRADE_TREE[45][player.className];
+        targetTier = 3;
+    } else if (player.level >= 60 && player.upgradeTier === 3) {
+        availableUpgrades = UPGRADE_TREE[60][player.className];
+        targetTier = 4;
+    }
+
+    if (targetTier > 0) {
+        if (availableUpgrades && availableUpgrades.length > 0) {
+            const filteredUpgrades = availableUpgrades.filter(className => {
+                const requiresUnlock = SHOP_ITEM_IDS.includes(className) || className === 'Cluster Tank' || className === 'Blender Tank';
+                return !requiresUnlock || globalData.unlockedTanks.includes(className);
+            });
+
+            if (filteredUpgrades.length > 0) {
+                showUpgradeMenu(filteredUpgrades, targetTier);
+            } else {
+                player.upgradeTier = targetTier;
+                checkPlayerUpgrades();
+            }
+        } else {
+            player.upgradeTier = targetTier;
+            checkPlayerUpgrades();
+        }
+    }
+}
+
+let NEXT_ENTITY_ID = 1;
+
+class Entity {
+    constructor(x, y, radius, color) {
+        this.entityId = NEXT_ENTITY_ID++;
+        this.x = x; this.y = y;
+        this.vx = 0; this.vy = 0;
+        this.radius = radius;
+        this.color = color;
+        this.hp = 100;
+        this.maxHp = 100;
+        this.dead = false;
+    }
+    update() {
+        this.x += this.vx; this.y += this.vy;
+        this.vx *= 0.9; this.vy *= 0.9;
+       
+        if (this.x < -MAP_SIZE/2) this.x = -MAP_SIZE/2;
+        if (this.x > MAP_SIZE/2) this.x = MAP_SIZE/2;
+        if (this.y < -MAP_SIZE/2) this.y = -MAP_SIZE/2;
+        if (this.y > MAP_SIZE/2) this.y = MAP_SIZE/2;
+
+        if(this.hp <= 0) this.dead = true;
+    }
+}
+
+class Tank extends Entity {
+    constructor(x, y, isBot = false, tankType = 'Basic') {
+        const botColors = ['#d63031', '#fdcb6e', '#e84393', '#00cec9', '#6c5ce7'];
+        let startColor = isBot ? botColors[Math.floor(Math.random() * botColors.length)] : '#00b894';
+       
+        super(x, y, 20, startColor);
+        const safeTankType = TANK_CLASSES[tankType] ? tankType : 'Basic';
+        const stats = TANK_CLASSES[safeTankType];
+        this.recoilMod = (stats && stats.recoilMod) || 1.0;
+        this.isBot = isBot;
+        this.name = isBot ? BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)] : "";
+        this.angle = 0;
+        this.baseColor = startColor;
+        this.stats = [0, 0, 0, 0, 0, 0, 0, 0];
+        this.statCaps = [...getPlayerStatCaps()];
+       
+        this.setClass(safeTankType);
+       
+        this.upgradePoints = 0;
+        this.level = 1;
+        this.xp = 0;
+        this.score = 0;
+        this.upgradeTier = 0;
+        this.lastShot = 0;
+        this.barrelIndex = 0;
+        this.recoilOffset = 0;
+        this.ammo = null;
+        this.reloadHoldTimer = 0;
+       
+        this.lastDamageTime = 0;
+        this.lastHealTick = 0;  
+        this.lastBodyDamageTimes = {};  
+       
+        this.stillTimer = 0;
+        this.alpha = 1;
+        this.slowTimer = 0;
+
+        this.autoAngles = [0,0,0,0,0];
+        this.lastAutoShots = [0,0,0,0,0];
+       
+        this.intent = { up: false, down: false, left: false, right: false, aimAngle: 0, shoot: false };
+    }
+
+    setClass(className) {
+        this.className = className;
+        this.config = TANK_CLASSES[className];
+        if (!this.isBot) this.color = this.config.color || '#00b894';
+        else this.color = this.baseColor;
+       
+        let oldMax = this.maxHp;
+        this.maxHp = 100 * (this.config.hpMod || 1) * (1 + this.stats[1] * HP_STAT_BONUS);
+        this.hp = (this.hp / oldMax) * this.maxHp;
+        if (this.config.ammoMax) {
+            this.ammo = this.config.ammoMax;
+            this.reloadHoldTimer = 0;
+        } else {
+            this.ammo = null;
+            this.reloadHoldTimer = 0;
+        }
+
+        if (!this.isBot && gameState === 'PLAYING') updateUI();
+    }
+
+    getStatMultiplier(statIndex) { return 1 + (this.stats[statIndex] * STAT_EFFECT_MULTIPLIER); }
+
+    addXp(amount) {
+        const xpGain = Math.max(0, amount) * getXpMultiplierForEntity(this);
+        this.xp += xpGain;
+        this.score += xpGain;
+        let xpNeeded = getXpNeeded(this.level);
+        let leveledUp = false;
+       
+        while(this.xp >= xpNeeded) {
+            this.level++;
+            this.xp -= xpNeeded;
+            leveledUp = true;
+           
+            if (this.level <= 30) {
+                this.upgradePoints++;
+            }
+           
+            if (this.isBot && this.upgradePoints > 0) {
+                let randomStat = Math.floor(Math.random() * STAT_NAMES.length);
+                if(this.stats[randomStat] < this.statCaps[randomStat]) {
+                    this.stats[randomStat]++;
+                    this.upgradePoints--;
+                    if (randomStat === 1) {
+                        this.maxHp = 100 * (this.config.hpMod || 1) * (1 + this.stats[1] * HP_STAT_BONUS);
+                    }
+                }
+            }
+            xpNeeded = getXpNeeded(this.level);
+        }
+
+        if (this.isBot) {
+            if (this.level >= 15 && this.upgradeTier === 0) {
+                this.setClass(UPGRADE_TREE[15][Math.floor(Math.random() * UPGRADE_TREE[15].length)]);
+                this.upgradeTier = 1;
+            }
+            if (this.level >= 30 && this.upgradeTier === 1 && UPGRADE_TREE[30][this.className]) {
+                let nextPath = UPGRADE_TREE[30][this.className];
+                if (nextPath && nextPath.length > 0) this.setClass(nextPath[Math.floor(Math.random() * nextPath.length)]);
+                this.upgradeTier = 2;
+            }
+            if (this.level >= 45 && this.upgradeTier === 2 && UPGRADE_TREE[45][this.className]) {
+                let nextPath = UPGRADE_TREE[45][this.className];
+                if (nextPath && nextPath.length > 0) this.setClass(nextPath[Math.floor(Math.random() * nextPath.length)]);
+                this.upgradeTier = 3;
+            }
+        } else if (leveledUp) {
+            checkPlayerUpgrades();
+        }
+    }
+
+    update() {
+        if (this.hp < this.maxHp) {
+            if (performance.now() - this.lastDamageTime > 4000) {
+                if (performance.now() - this.lastHealTick > 500) {
+                    let healChunk = this.maxHp * (0.005 + (this.stats[0] * 0.01));
+                    this.hp += healChunk;
+                    if (this.hp > this.maxHp) this.hp = this.maxHp;
+                    this.lastHealTick = performance.now();
+                }
+            }
+        }
+
+        let speed = 2.5 * (this.config.speedMod || 1) * (1 + this.stats[2] * 0.05);
+
+        if (this.slowTimer > 0) {
+            speed *= 0.3;
+            this.slowTimer--;
+        }
+       
+        let moveX = 0, moveY = 0;
+        if(this.intent.up) moveY -= 1;
+        if(this.intent.down) moveY += 1;
+        if(this.intent.left) moveX -= 1;
+        if(this.intent.right) moveX += 1;
+
+        if (moveX !== 0 || moveY !== 0) {
+            let len = Math.hypot(moveX, moveY);
+            this.vx += (moveX / len) * speed * 0.2;
+            this.vy += (moveY / len) * speed * 0.2;
+           
+            this.stillTimer = 0;
+            this.alpha = 1;
+        } else {
+            if (this.config.invisible && !this.intent.shoot) {
+                this.stillTimer++;
+                if (this.stillTimer > 120) this.alpha = Math.max(0.15, this.alpha - 0.05);
+            } else {
+                this.stillTimer = 0;
+                this.alpha = 1;
+            }
+        }
+
+        this.angle = this.intent.aimAngle;
+        let reloadTime = 30 * (this.config.reloadMod || 1) / this.getStatMultiplier(6);
+        const usesAmmo = !!this.config.ammoMax;
+        if (usesAmmo) {
+            if (this.ammo === null || this.ammo === undefined) this.ammo = this.config.ammoMax;
+            if (this.ammo <= 0) {
+                if (this.intent.shoot) {
+                    this.reloadHoldTimer++;
+                    if (this.reloadHoldTimer >= (this.config.ammoReloadFrames || 60)) {
+                        this.ammo = this.config.ammoMax;
+                        this.reloadHoldTimer = 0;
+                    }
+                } else {
+                    this.reloadHoldTimer = 0;
+                }
+            } else {
+                this.reloadHoldTimer = 0;
+            }
+        }
+
+        if (this.intent.shoot && !this.config.rammerCanShoot && !this.config.rammer && this.config.barrels && this.config.barrels.length > 0 && (!usesAmmo || this.ammo > 0)) {
+            this.stillTimer = 0;
+            this.alpha = 1;
+            if (performance.now() - this.lastShot > reloadTime * 16) {
+              this.shoot();
+                this.lastShot = performance.now();
+                if (usesAmmo) this.ammo = Math.max(0, this.ammo - 1);
+               this.recoilOffset = (5 + (this.config.recoil || 0)) * (this.config.recoilMod || 1.0);
+            } 
+        } 
+
+        if (this.config.autoTurrets || this.config.autoTurret) {
+            let turrets = this.config.autoTurrets || [{x:0, y:0}];
+            let target = null;
+            let minDist = Infinity;
+           
+            let enemies = this.isBot ? bots.filter(b => b!==this && !b.dead && b.alpha > 0.3) : bots.filter(b => !b.dead && b.alpha > 0.3);
+            if (this.isBot && !player.dead && player.alpha > 0.3) enemies.push(player);
+           
+            enemies.forEach(e => {
+                let d = Math.hypot(e.x - this.x, e.y - this.y);
+                if (d < minDist && d < 600) { minDist = d; target = e; }
+            });
+            if (!target) {
+                shapes.forEach(s => {let d = Math.hypot(s.x - this.x, s.y - this.y);
+                    if (d < minDist && d < 600) { minDist = d; target = s; }
+                });
+            }
+
+            turrets.forEach((t, i) => {
+                let rotX = Math.cos(this.angle)*t.x - Math.sin(this.angle)*t.y;
+                let rotY = Math.sin(this.angle)*t.x + Math.cos(this.angle)*t.y;
+                let absX = this.x + rotX;
+                let absY = this.y + rotY;
+
+                if (target) {
+                    this.autoAngles[i] = Math.atan2(target.y - absY, target.x - absX);
+                    if (performance.now() - (this.lastAutoShots[i]||0) > 180 * (this.config.reloadMod||1)) {
+                        let spawnX = absX + Math.cos(this.autoAngles[i]) * 20;
+                        let spawnY = absY + Math.sin(this.autoAngles[i]) * 20;
+                        let bDmg = 5 * this.getStatMultiplier(5) * (this.config.dmgMod||1);
+                        let bSpeed = 7 * this.getStatMultiplier(3);
+                        let b = new Bullet(spawnX, spawnY, this.autoAngles[i], bSpeed, bDmg, 1, 5, this.color, this, false, 1);
+                        bullets.push(b);
+                        this.lastAutoShots[i] = performance.now();
+                    }
+                } else {
+                    this.autoAngles[i] = (this.autoAngles[i] || 0) + 0.02;
+                }
+            });
+        }
+
+        if (this.recoilOffset > 0) this.recoilOffset -= 1;
+        super.update();
+    }
+
+    shoot() {
+        let barrels = this.config.barrels;
+        let firedBarrelIndex = this.barrelIndex;
+        let toShoot = this.config.fireType === 'simultaneous' ? barrels : [barrels[this.barrelIndex]];
+       
+        toShoot.forEach(b => {
+            let bAngle = this.angle + (b.angle || 0);
+            let spread = (Math.random() - 0.5) * (this.config.spread || 0.05);
+            bAngle += spread;
+
+            let spawnX = this.x + Math.cos(this.angle) * (b.x||0) - Math.sin(this.angle) * (b.y||0);
+            let spawnY = this.y + Math.sin(this.angle) * (b.x||0) + Math.cos(this.angle) * (b.y||0);
+            spawnX += Math.cos(bAngle) * b.w;
+            spawnY += Math.sin(bAngle) * b.w;
+
+            let bSpeed = 7 * (b.bulletSpeed || this.config.bulletSpeed || 1) * this.getStatMultiplier(3);
+           
+            let barrelDmgMod = b.dmgMod !== undefined ? b.dmgMod : (this.config.dmgMod || 1);
+            let bDmg = 10 * barrelDmgMod * this.getStatMultiplier(5);
+           
+            let bSize = 8 * (b.bulletSize || this.config.bulletSize || 1);
+            let bPen = (1 + this.stats[4]) * (this.config.penMod || 1);
+
+            const bullet = new Bullet(spawnX, spawnY, bAngle, bSpeed, bDmg, bPen, bSize, this.config.bulletColor || this.color, this, this.config.freezes, this.config.bulletLife || 1);
+            bullet.bouncy = !!(this.config.bouncyBullets || b.bouncyBullets);
+            bullet.bouncesLeft = bullet.bouncy ? (b.bounces || this.config.bounces || 4) : 0;
+            bullet.spikeTrail = !!(this.config.spikeTrail || b.spikeTrail);
+            bullets.push(bullet);
+           
+            if (b.backThrust) {
+                this.vx -= Math.cos(bAngle) * (b.backThrust * this.recoilMod);
+                this.vy -= Math.sin(bAngle) * (b.backThrust * this.recoilMod);
+            } else if(b.back || this.config.backThrust) {
+                let thrust = (this.config.backThrust || 1) * this.recoilMod;
+                this.vx += Math.cos(this.angle) * thrust;
+                this.vy += Math.sin(this.angle) * thrust;
+            } else if (this.config.hasRecoil) {
+                this.vx -= Math.cos(bAngle) * (0.5 * this.recoilMod);
+                this.vy -= Math.sin(bAngle) * (0.5 * this.recoilMod);
+            }
+        });
+        this.barrelIndex = (this.barrelIndex + 1) % barrels.length;
+        if (this === player) broadcastLocalShot(firedBarrelIndex);
+    }
+
+    drawShape(ctx) {
+        ctx.fillStyle = this.color; ctx.lineWidth = 4; ctx.strokeStyle = '#333'; ctx.beginPath();
+        if(this.config.shape === 'square') {
+            ctx.rect(-18, -18, 36, 36);
+        } else if(this.config.shape === 'hexagon') {
+            for(let i=0; i<6; i++) ctx.lineTo(24*Math.cos(i*Math.PI/3), 24*Math.sin(i*Math.PI/3));
+            ctx.closePath();
+        } else {
+            ctx.arc(0, 0, this.radius, 0, Math.PI*2);
+        }
+        ctx.fill(); ctx.stroke();
+    }
+
+    draw(ctx) {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+       
+        ctx.save();
+        ctx.translate(this.x - Math.cos(this.angle)*this.recoilOffset, this.y - Math.sin(this.angle)*this.recoilOffset);
+        ctx.rotate(this.angle);
+
+        ctx.fillStyle = '#95a5a6'; ctx.strokeStyle = '#333'; ctx.lineWidth = 3;
+        if(this.config.barrels) {
+            this.config.barrels.forEach(b => {
+                ctx.save(); ctx.translate(b.x || 0, b.y || 0); ctx.rotate(b.angle || 0);
+                ctx.fillRect(0, -b.h/2, b.w, b.h); ctx.strokeRect(0, -b.h/2, b.w, b.h);
+                ctx.restore();
+            });
+        }
+        this.drawShape(ctx);
+        ctx.restore();
+
+        if (this.config.autoTurrets || this.config.autoTurret) {
+            let turrets = this.config.autoTurrets || [{x:0, y:0}];
+            turrets.forEach((t, i) => {
+                ctx.save();
+                let rotX = Math.cos(this.angle)*t.x - Math.sin(this.angle)*t.y;
+                let rotY = Math.sin(this.angle)*t.x + Math.cos(this.angle)*t.y;
+                ctx.translate(this.x + rotX, this.y + rotY);
+                ctx.rotate(this.autoAngles[i] || 0);
+                ctx.fillStyle = '#95a5a6'; ctx.strokeStyle = '#333'; ctx.lineWidth = 3;
+                ctx.fillRect(0, -6, 20, 12); ctx.strokeRect(0, -6, 20, 12);
+                ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI*2); ctx.fillStyle = this.color; ctx.fill(); ctx.stroke();
+                ctx.restore();
+            });
+        }
+
+        if (this.alpha > 0.5) {
+            if (this.name) {
+                ctx.fillStyle = '#333'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
+                ctx.fillText(`${this.name} - Lvl ${this.level}`, this.x, this.y - 30);
+            }
+            if(this.hp < this.maxHp) {
+                ctx.fillStyle = '#333'; ctx.fillRect(this.x - 25, this.y + 30, 50, 6);
+                ctx.fillStyle = '#2ecc71'; ctx.fillRect(this.x - 25, this.y + 30, 50 * (this.hp/this.maxHp), 6);
+            }
+        }
+       
+        ctx.restore();
+    }
+}
+
+class RemoteTank extends Tank {
+    constructor(x, y, name = 'Guest', networkId = '') {
+        super(x, y, false, 'Basic');
+        this.networkId = networkId;
+        this.isRemote = true;
+        this.name = name || 'Guest';
+        this.alpha = 1;
+        this.intent = { up: false, down: false, left: false, right: false, aimAngle: 0, shoot: false };
+    }
+
+    update() {
+        if (this.dead) return;
+    }
+
+    applyNetState(state) {
+        if (!state) return;
+        if (typeof state.x === 'number') this.x = state.x;
+        if (typeof state.y === 'number') this.y = state.y;
+        if (typeof state.vx === 'number') this.vx = state.vx;
+        if (typeof state.vy === 'number') this.vy = state.vy;
+        if (typeof state.angle === 'number') this.angle = state.angle;
+        if (typeof state.alpha === 'number') this.alpha = state.alpha;
+        if (typeof state.name === 'string' && state.name) this.name = state.name;
+
+        if (Array.isArray(state.stats)) this.stats = [...state.stats];
+        if (Array.isArray(state.statCaps)) this.statCaps = [...state.statCaps];
+        if (typeof state.className === 'string' && state.className) this.setClass(state.className);
+
+        if (typeof state.level === 'number') this.level = state.level;
+        if (typeof state.xp === 'number') this.xp = state.xp;
+        if (typeof state.score === 'number') this.score = state.score;
+        if (typeof state.upgradePoints === 'number') this.upgradePoints = state.upgradePoints;
+        if (typeof state.upgradeTier === 'number') this.upgradeTier = state.upgradeTier;
+        if (typeof state.maxHp === 'number') this.maxHp = state.maxHp;
+        if (typeof state.hp === 'number') this.hp = state.hp;
+        if (typeof state.barrelIndex === 'number') this.barrelIndex = state.barrelIndex;
+        if (state.dead === true) this.dead = true;
+        this.lastSeen = Date.now();
+    }
+}
+
+class Player extends Tank {
+    constructor(x, y) {
+        super(x, y, false);
+        this.lastCombatTime = 0;
+        this.resetState = 0;
+        this.resetStartTime = 0;
+        this.autoShoot = false;
+        this.autoRotate = false;
+       
+    }
+    update() {
+        if (gameState === 'PLAYING') {
+            this.intent.up = keys['w']; this.intent.down = keys['s'];
+            this.intent.left = keys['a']; this.intent.right = keys['d'];
+           
+            this.intent.shoot = mouse.down || this.autoShoot;
+
+            if (this.autoRotate) {
+                this.intent.aimAngle += 0.05;
+            } else {
+                let dx = (mouse.x - canvas.width/2) + camera.x - this.x;
+                let dy = (mouse.y - canvas.height/2) + camera.y - this.y;
+                this.intent.aimAngle = Math.atan2(dy, dx);
+            }
+           
+            let timeSinceCombat = (performance.now() - this.lastCombatTime) / 1000;
+            let combatTimerLeft = Math.max(0, COMBAT_TIMER_MAX - timeSinceCombat);
+            let statusText = document.getElementById('combat-status');
+           
+            if (this.lastCombatTime === 0 || combatTimerLeft === 0) {
+                statusText.textContent = "Combat: SAFE";
+                statusText.style.color = "#2ecc71";
+            } else {
+                statusText.textContent = `Combat: ${Math.ceil(combatTimerLeft)}s`;
+                statusText.style.color = "#e74c3c";
+            }
+
+            if (this.resetState === 1 && combatTimerLeft > 0) {
+                this.resetState = 2;
+            }
+
+            let msgBox = document.getElementById('action-message');
+            if (this.resetState > 0) {
+                let elapsed = (performance.now() - this.resetStartTime) / 1000;
+                let timeLeft = Math.ceil(3 - elapsed);
+               
+                msgBox.style.display = 'block';
+                if (this.resetState === 1) {
+                    msgBox.textContent = `Saving lvls... ${timeLeft}`;
+                    msgBox.style.color = '#55efc4';
+                } else {
+                    msgBox.textContent = `Resetting in ${timeLeft}`;
+                    msgBox.style.color = '#ff7675';
+                }
+               
+                if (elapsed >= 3) {
+                    msgBox.style.display = 'none';
+                    if (this.resetState === 1) {
+                        globalData.savedTank = {
+                            level: this.level,
+                            xp: this.xp
+                        };
+                    } else {
+                        globalData.savedTank = null;
+                    }
+                    saveGameData();
+                    this.dead = true;
+                }
+            } else {
+                msgBox.style.display = 'none';
+            }
+
+        } else {
+            this.intent.up = this.intent.down = this.intent.left = this.intent.right = this.intent.shoot = false;
+        }
+        super.update();
+        syncLocalPlayerState();
+    }
+}
+
+class Bot extends Tank {
+    constructor(x, y) {
+        super(x, y, true);
+        this.thinkAt = 0;
+        this.strafeDir = Math.random() < 0.5 ? -1 : 1;
+        this.wanderAngle = Math.random() * Math.PI * 2;
+        this.personality = Math.random();
+        this.humanDelay = 0;
+    }
+
+    pickTarget() {
+        const candidates = [];
+        const myLevel = this.level || 1;
+
+        const shouldChallengeTank = (target, distance) => {
+            const targetLevel = Math.max(1, target && typeof target.level === 'number' ? target.level : 1);
+            const levelGap = myLevel - targetLevel;
+
+            if (this.isBot) {
+                if (myLevel < 10) {
+                    return false;
+                }
+                if (levelGap < 0 && distance > 170) return false;
+                if (levelGap < 3 && distance > 240) return false;
+                return true;
+            }
+
+            return true;
+        };
+
+        if (player && !player.dead && player !== this) {
+            const d = Math.hypot(player.x - this.x, player.y - this.y);
+            if (shouldChallengeTank(player, d)) candidates.push(player);
+        }
+
+        remotePlayers.forEach(r => {
+            if (!r.dead && r !== this) {
+                const d = Math.hypot(r.x - this.x, r.y - this.y);
+                if (shouldChallengeTank(r, d)) candidates.push(r);
+            }
+        });
+
+        bots.forEach(b => {
+            if (b !== this && !b.dead) {
+                const d = Math.hypot(b.x - this.x, b.y - this.y);
+                if (shouldChallengeTank(b, d)) candidates.push(b);
+            }
+        });
+
+        let best = null;
+        let bestScore = Infinity;
+        candidates.forEach(t => {
+            const d = Math.hypot(t.x - this.x, t.y - this.y);
+            const targetLevel = Math.max(1, t && typeof t.level === 'number' ? t.level : 1);
+            const levelBias = this.isBot ? Math.max(0.55, Math.min(1.8, (myLevel + 2) / (targetLevel + 2))) : 1;
+            const score = d / levelBias;
+            if (score < bestScore) {
+                bestScore = score;
+                best = t;
+            }
+        });
+        return best;
+    }
+
+    update(targets = []) {
+        if (this.dead) return;
+
+        const now = performance.now();
+        const tankTarget = this.pickTarget();
+        const shapeTarget = shapes.reduce((best, s) => {
+            const d = Math.hypot(s.x - this.x, s.y - this.y);
+            if (!best || d < best.d) return { entity: s, d };
+            return best;
+        }, null);
+
+        let target = tankTarget || (shapeTarget && shapeTarget.entity) || null;
+        let dist = target ? Math.hypot(target.x - this.x, target.y - this.y) : Infinity;
+        let angleTo = target ? Math.atan2(target.y - this.y, target.x - this.x) : this.wanderAngle;
+
+        if (now > this.thinkAt) {
+            this.thinkAt = now + 140 + Math.random() * 160;
+            if (Math.random() < 0.28) this.strafeDir *= -1;
+            if (Math.random() < 0.08) this.wanderAngle += (Math.random() - 0.5) * 0.8;
+        }
+
+        const isRammer = !!this.config.rammer;
+        const prefersRange = isRammer ? 60 : (this.config.bulletSpeed ? 260 : 190);
+        let moveAngle = angleTo;
+
+        if (target) {
+            if (isRammer) {
+                moveAngle = angleTo;
+            } else if (dist < prefersRange * 0.85) {
+                moveAngle = angleTo + Math.PI;
+            } else if (dist > prefersRange * 1.15) {
+                moveAngle = angleTo;
+            } else {
+                moveAngle = angleTo + this.strafeDir * Math.PI / 2;
+            }
+        }
+
+        const mvx = Math.cos(moveAngle);
+        const mvy = Math.sin(moveAngle);
+        this.intent.up = mvy < -0.35;
+        this.intent.down = mvy > 0.35;
+        this.intent.left = mvx < -0.35;
+        this.intent.right = mvx > 0.35;
+        this.intent.aimAngle = angleTo + (Math.random() - 0.5) * 0.03;
+        const targetLevel = target && typeof target.level === 'number' ? target.level : 1;
+        const levelLead = Math.max(0, (this.level || 1) - targetLevel);
+        const willingnessToFight = this.isBot
+            ? Math.max(0.12, Math.min(1, 0.14 + (this.level || 1) / 26 + levelLead / 18))
+            : 1;
+
+        this.intent.shoot = !!target && !isRammer && dist < (this.config.bulletSpeed ? 800 : 520) && (
+            !this.isBot || levelLead >= 4 || dist < 150 || Math.random() < willingnessToFight * 0.35
+        );
+
+        if (!target) {
+            this.intent.up = true;
+            this.intent.down = this.intent.left = this.intent.right = false;
+            this.intent.aimAngle = this.wanderAngle;
+            this.intent.shoot = false;
+        }
+
+        super.update();
+    }
+}
+
+class Bullet extends Entity {
+    constructor(x, y, angle, speed, damage, pen, size, color, owner, freezes, lifeMult) {
+        super(x, y, size, color);
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.damage = damage;
+        this.pen = pen;
+        this.owner = owner;
+        this.maxLife = 80 * (lifeMult || 1);
+        this.life = this.maxLife;
+        this.freezes = freezes;
+        this.hitEntities = new Set();
+        this.bouncy = false;
+        this.bouncesLeft = 0;
+        this.spikeTrail = false;
+    }
+    update() {
+        this.x += this.vx; this.y += this.vy;
+
+        const lifeRatio = this.maxLife > 0 ? this.life / this.maxLife : 0;
+        if (lifeRatio < 0.3) {
+            const endDrag = 0.92 + (lifeRatio / 0.3) * 0.06;
+            this.vx *= endDrag;
+            this.vy *= endDrag;
+        }
+
+        this.life--;
+        if(this.life <= 0 || this.pen <= 0) this.dead = true;
+    }
+    draw(ctx) {
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+        ctx.fillStyle = this.color; ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = '#333'; ctx.stroke();
+    }
+}
+
+class Shape extends Entity {
+    constructor(x, y, type) {
+        super(x, y, type==='square'?15:type==='triangle'?18:25,
+            type==='square'?'#ffeaa7':type==='triangle'?'#fab1a0':'#74b9ff');
+        this.type = type;
+        this.maxHp = type==='square'?20:type==='triangle'?40:100;
+        this.hp = this.maxHp;
+        this.xpValue = type==='square'?50:type==='triangle'?100:250;
+        this.angle = Math.random() * Math.PI;
+        this.rotSpeed = (Math.random() - 0.5) * 0.05;
+    }
+    update() {
+        super.update();
+        this.angle += this.rotSpeed;
+    }
+    draw(ctx) {
+        ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle);
+        ctx.fillStyle = this.color; ctx.strokeStyle = '#333'; ctx.lineWidth = 3;
+        ctx.beginPath();
+        if(this.type === 'square') ctx.rect(-15, -15, 30, 30);
+        else if(this.type === 'triangle') { ctx.moveTo(18,0); ctx.lineTo(-9,15); ctx.lineTo(-9,-15); ctx.closePath(); }
+        else if(this.type === 'pentagon') { for(let i=0;i<5;i++) { ctx.lineTo(25*Math.cos(i*2*Math.PI/5), 25*Math.sin(i*2*Math.PI/5)); } ctx.closePath(); }
+        ctx.fill(); ctx.stroke(); ctx.restore();
+       
+        if(this.hp < this.maxHp) {
+            ctx.fillStyle = '#333'; ctx.fillRect(this.x - 15, this.y + 25, 30, 4);
+            ctx.fillStyle = '#e74c3c'; ctx.fillRect(this.x - 15, this.y + 25, 30 * (this.hp/this.maxHp), 4);
+        }
+    }
+}
+
+class SpikeTrap extends Entity {
+    constructor(x, y, owner, damage = 16, lifeMs = 9000) {
+        super(x, y, 12, owner && owner.color ? owner.color : '#a29bfe');
+        this.owner = owner;
+        this.damage = damage;
+        this.maxLife = lifeMs;
+        this.life = lifeMs;
+        this.radius = 12;
+    }
+    update() {
+        this.life -= 16.6667;
+        if (this.life <= 0) this.dead = true;
+    }
+    draw(ctx) {
+        const alpha = Math.max(0.15, Math.min(1, this.life / this.maxLife));
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.translate(this.x, this.y);
+        ctx.fillStyle = this.color;
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+            const a = (Math.PI * 2 / 6) * i;
+            const r = i % 2 === 0 ? 12 : 5;
+            const px = Math.cos(a) * r;
+            const py = Math.sin(a) * r;
+            if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+    }
+}
+
+let player = new Player(0, 0);
+let bots = [];
+let bullets = [];
+let shapes = [];
+let groundSpikes = [];
+
+function initGame() {
+    for(let i=0; i<STAT_NAMES.length; i++) document.getElementById(`stat-fill-${i}`).style.width = '0%';
+   
+    player = new Player(0, 0);
+    player.name = playerNameInput.value || "Player";
+    player.statCaps = [...getPlayerStatCaps()];
+   
+    player.setClass('Basic');
+    if (globalData.savedTank) {
+        player.level = globalData.savedTank.level || 1;
+        player.xp = globalData.savedTank.xp || 0; 
+        player.stats = [0, 0, 0, 0, 0, 0, 0, 0];
+        player.statCaps = [...getPlayerStatCaps()];
+        player.upgradePoints = Math.max(0, Math.min(44, player.level - 1));
+        player.score = 0;
+        player.upgradeTier = 0;
+       
+        for(let i=0; i<STAT_NAMES.length; i++) {
+            document.getElementById(`stat-fill-${i}`).style.width = '0%';
+        }
+
+        setTimeout(() => checkPlayerUpgrades(), 100);
+    }
+   
+    bots = []; bullets = []; shapes = []; groundSpikes = [];
+    remotePlayers.clear();
+    document.getElementById('evolution-toggle').style.display = 'none';
+    document.getElementById('upgrade-menu').style.display = 'none';
+    document.getElementById('kill-feed').innerHTML = '';
+
+    for(let i=0; i<MAX_BOTS; i++) bots.push(new Bot((Math.random()-0.5)*MAP_SIZE, (Math.random()-0.5)*MAP_SIZE));
+    for(let i=0; i<MAX_SHAPES; i++) spawnShape();
+   
+    startNetworkSession();
+
+    gameState = 'PLAYING';
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('shop-screen').style.display = 'none';
+    document.getElementById('game-ui').style.display = 'block';
+
+    updateUI();
+}
+
+function safeExitToMenu() {
+    stopNetworkSession();
+    gameState = 'START';
+    document.getElementById('game-ui').style.display = 'none';
+    document.getElementById('start-screen').style.display = 'block';
+}
+
+function spawnShape() {
+    let x = (Math.random() - 0.5) * MAP_SIZE;
+    let y = (Math.random() - 0.5) * MAP_SIZE;
+    let r = Math.random();
+    let type = r < 0.6 ? 'square' : r < 0.9 ? 'triangle' : 'pentagon';
+    shapes.push(new Shape(x, y, type));
+}
+
+document.getElementById('play-btn').addEventListener('click', initGame);
+
+document.getElementById('hide-upgrade-menu').addEventListener('click', () => {
+    document.getElementById('upgrade-menu').style.display = 'none';
+    document.getElementById('evolution-toggle').style.display = 'block';
+});
+
+document.getElementById('evolution-toggle').addEventListener('click', () => {
+    document.getElementById('evolution-toggle').style.display = 'none';
+    checkPlayerUpgrades();
+});
+
+const statsPanel = document.getElementById('stats-panel');
+statsPanel.innerHTML = ''; 
+STAT_NAMES.forEach((name, i) => {
+    let row = document.createElement('div'); row.className = 'stat-row';
+    row.innerHTML = `
+        <span style="width: 20px;">[${i+1}]</span>
+        <div class="stat-bar"><div class="stat-fill" id="stat-fill-${i}" style="width: 0%; background:${STAT_COLORS[i]}"></div></div>
+        <span style="width: 120px;">${name}</span>
+        <button style="cursor:pointer; background:#444; color:white; border:none; border-radius:3px; padding:2px 8px;">+</button>
+    `;
+    row.addEventListener('click', () => upgradeStat(i));
+    statsPanel.appendChild(row);
+});
+
+function showUpgradeMenu(classes, targetTier) {
+    const upgradeContainer = document.getElementById('upgrade-buttons');
+    upgradeContainer.innerHTML = '';
+
+    const filteredClasses = classes.filter(className => {
+        const requiresUnlock = SHOP_ITEM_IDS.includes(className) || className === 'Cluster Tank' || className === 'Blender Tank';
+        return !requiresUnlock || globalData.unlockedTanks.includes(className);
+    });
+
+    filteredClasses.forEach(className => {
+        let btn = document.createElement('button'); btn.className = 'upgrade-btn';
+        btn.style.borderColor = TANK_CLASSES[className].color; btn.textContent = TANK_CLASSES[className].name;
+        btn.onclick = () => {
+            player.setClass(className);
+            player.upgradeTier = targetTier;
+            document.getElementById('upgrade-menu').style.display = 'none';
+            updateUI();
+            checkPlayerUpgrades();
+        };
+        upgradeContainer.appendChild(btn);
+    });
+
+    if (filteredClasses.length === 0) {
+        player.upgradeTier = targetTier;
+        document.getElementById('upgrade-menu').style.display = 'none';
+        checkPlayerUpgrades();
+        return;
+    }
+
+    let titleText = "Choose a Class:";
+    if (targetTier === 1) titleText = "Level 15 Reached! Choose a Class:";
+    if (targetTier === 2) titleText = "Level 30 Reached! Evolve Class:";
+    if (targetTier === 3) titleText = "Level 45 Reached! Final Evolution:";
+    document.getElementById('upgrade-menu-title').textContent = titleText;
+
+    document.getElementById('upgrade-menu').style.display = 'flex';
+}
+
+window.addEventListener('keydown', e => {
+    if(gameState !== 'PLAYING') return;
+    let key = e.key.toLowerCase();
+   
+    let num = parseInt(key);
+    if(num >= 1 && num <= STAT_NAMES.length) upgradeStat(num - 1);
+
+    if (key === 'e') player.autoShoot = !player.autoShoot;
+    if (key === 'q') player.autoRotate = !player.autoRotate;
+});
+
+function saveLevelsOnRefresh() {
+    if (!player || gameState !== 'PLAYING') return;
+
+    const timeSinceCombat = (performance.now() - player.lastCombatTime) / 1000;
+    const combatTimerLeft = Math.max(0, COMBAT_TIMER_MAX - timeSinceCombat);
+
+    if (player.lastCombatTime !== 0 && combatTimerLeft > 0) {
+        globalData.savedTank = null;
+        saveGameData();
+        return;
+    }
+
+    if (player.dead) return;
+
+    globalData.savedTank = {
+        level: player.level,
+        xp: player.xp
+    };
+    saveGameData();
+}
+
+window.addEventListener('beforeunload', saveLevelsOnRefresh);
+
+function upgradeStat(index) {
+    const cap = player ? getStatCapForIndex(index, player.statCaps) : BASE_STAT_CAP;
+    if(player.upgradePoints > 0 && player.stats[index] < cap) {
+        player.stats[index]++;
+        player.upgradePoints--;
+       
+        if(index === 1) {
+            player.maxHp = 100 * (player.config.hpMod || 1) * (1 + player.stats[1] * HP_STAT_BONUS)
+        }
+       
+        document.getElementById(`stat-fill-${index}`).style.width = `${(player.stats[index]/cap)*100}%`;
+        updateUI();
+    }
+}
+
+// ---------------------------------------------------------------------
+// MASSIVE BODY DAMAGE BUFF APPLIED HERE
+// ---------------------------------------------------------------------
+function getBodyDamageForTank(tank) {
+    const bodyStat = tank?.stats?.[7] || 0;
+    const classBody = tank?.config?.bodyDamage || (tank?.config?.rammer ? 2.5 : 1.0);
+    return classBody * (1 + bodyStat * 4.5); 
+}
+
+function applyBodyDamage(attacker, target, damage) {
+    if (!attacker || !target || damage <= 0) return false;
+    const now = performance.now();
+    if (!attacker.lastBodyDamageTimes) attacker.lastBodyDamageTimes = {};
+    const key = target.entityId;
+    const last = attacker.lastBodyDamageTimes[key] || 0;
+    if (now - last < BODY_DAMAGE_TICK_MS) return false;
+    attacker.lastBodyDamageTimes[key] = now;
+    target.hp -= damage;
+    target.lastDamageTime = now;
+    if (attacker === player || target === player) player.lastCombatTime = now;
+    return true;
+}
+
+function checkCollisions(tanksArray) {
+    tanksArray.forEach(tank => {
+        bullets.forEach(b => {
+            if (b.dead || b.owner === tank) return;
+            if (b.hitEntities.has(tank)) return;
+
+            let dx = tank.x - b.x; let dy = tank.y - b.y;
+            if(Math.sqrt(dx*dx + dy*dy) < tank.radius + b.radius) {
+                tank.hp -= b.damage;
+                tank.lastDamageTime = performance.now();
+                b.pen -= 1;
+                b.hitEntities.add(tank);
+               
+                if (tank === player) player.lastCombatTime = performance.now();
+                if (b.owner === player) player.lastCombatTime = performance.now();
+
+                if (b.freezes) tank.slowTimer = 120;
+
+                if(b.pen <= 0) b.dead = true;
+               
+                if(tank.hp <= 0 && !tank.dead) {
+                    tank.dead = true;
+                    b.owner.addXp(Math.max(Math.floor(tank.score), 50));
+                   
+                    if (b.owner === player) {
+                        const killGems = getKillGemReward(tank.level);
+                        globalData.gems += killGems;
+                        saveGameData();
+                        updateUI();
+                        showKillMessage(tank.name, killGems);
+                    }
+                }
+            }
+        });
+    });
+
+    for (let i = 0; i < tanksArray.length; i++) {
+        for (let j = i + 1; j < tanksArray.length; j++) {
+            let t1 = tanksArray[i];
+            let t2 = tanksArray[j];
+            if (t1.dead || t2.dead) continue;
+           
+            let dx = t1.x - t2.x;
+            let dy = t1.y - t2.y;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+           
+            if (dist < t1.radius + t2.radius) {
+                let angle = Math.atan2(dy, dx);
+                let force = 2;
+                t1.vx += Math.cos(angle) * force; t1.vy += Math.sin(angle) * force;
+                t2.vx -= Math.cos(angle) * force; t2.vy -= Math.sin(angle) * force;
+               
+                const t1Dmg = getBodyDamageForTank(t1);
+                const t2Dmg = getBodyDamageForTank(t2);
+
+                applyBodyDamage(t1, t2, t1Dmg);
+                applyBodyDamage(t2, t1, t2Dmg);
+
+                if (t1.hp <= 0 && !t1.dead) {
+                    t1.dead = true;
+                    t2.addXp(Math.max(Math.floor(t1.score), 50));
+                    if (t2 === player) {
+                        const killGems = getKillGemReward(t1.level);
+                        globalData.gems += killGems;
+                        saveGameData();
+                        updateUI();
+                        showKillMessage(t1.name, killGems);
+                    }
+                }
+                if (t2.hp <= 0 && !t2.dead) {
+                    t2.dead = true;
+                    t1.addXp(Math.max(Math.floor(t2.score), 50));
+                    if (t1 === player) {
+                        const killGems = getKillGemReward(t2.level);
+                        globalData.gems += killGems;
+                        saveGameData();
+                        updateUI();
+                        showKillMessage(t2.name, killGems);
+                    }
+                }
+            }
+        }
+    }
+
+    groundSpikes.forEach(spike => {
+        if (spike.dead) return;
+        tanksArray.forEach(tank => {
+            if (tank.dead) return;
+            const dx = tank.x - spike.x;
+            const dy = tank.y - spike.y;
+            if (Math.sqrt(dx*dx + dy*dy) < tank.radius + spike.radius) {
+                tank.hp -= spike.damage;
+                tank.lastDamageTime = performance.now();
+                if (tank === player) player.lastCombatTime = performance.now();
+                if (tank.hp <= 0 && !tank.dead) tank.dead = true;
+            }
+        });
+        shapes.forEach(s => {
+            if (s.dead) return;
+            const dx = s.x - spike.x;
+            const dy = s.y - spike.y;
+            if (Math.sqrt(dx*dx + dy*dy) < s.radius + spike.radius) {
+                s.hp -= Math.max(2, spike.damage * 0.4);
+                if (s.hp <= 0 && !s.dead) s.dead = true;
+            }
+        });
+    });
+
+    shapes.forEach(s => {
+        bullets.forEach(b => {
+            if(b.dead) return;
+            if(b.hitEntities.has(s)) return;
+
+            let dx = s.x - b.x; let dy = s.y - b.y;
+            if(Math.sqrt(dx*dx + dy*dy) < s.radius + b.radius) {
+                if (b.bouncy && b.bouncesLeft > 0) {
+                    const dist = Math.max(0.001, Math.sqrt(dx*dx + dy*dy));
+                    const nx = dx / dist;
+                    const ny = dy / dist;
+                    const dot = b.vx * nx + b.vy * ny;
+                    b.vx = b.vx - 2 * dot * nx;
+                    b.vy = b.vy - 2 * dot * ny;
+                    const out = s.radius + b.radius + 1;
+                    b.x = s.x + nx * out;
+                    b.y = s.y + ny * out;
+                    b.bouncesLeft--;
+                    b.hitEntities.add(s);
+                    if (b.owner === player) player.lastCombatTime = performance.now();
+                    return;
+                }
+
+                if (b.spikeTrail) {
+                    const spike = new SpikeTrap(b.x, b.y, b.owner, Math.max(12, Math.round(b.damage * 0.55)), 9000);
+                    groundSpikes.push(spike);
+                }
+
+                s.hp -= b.damage;
+                b.pen -= 1;
+                b.hitEntities.add(s);
+
+                if (b.owner === player) player.lastCombatTime = performance.now();
+
+                if(b.pen <= 0) b.dead = true;
+
+                if(s.hp <= 0 && !s.dead) {
+                    s.dead = true;
+                    b.owner.addXp(s.xpValue);
+                    if (b.owner === player) updateUI();
+                }
+            }
+        });
+
+        tanksArray.forEach(tank => {
+            let pdx = s.x - tank.x; let pdy = s.y - tank.y;
+            let pDist = Math.sqrt(pdx*pdx + pdy*pdy);
+            if(pDist < s.radius + tank.radius) {
+                const pDmg = getBodyDamageForTank(tank);
+                applyBodyDamage(tank, s, pDmg);
+                applyBodyDamage(s, tank, Math.max(1, pDmg * 0.65));
+               
+                tank.vx -= pdx*0.1; tank.vy -= pdy*0.1;
+
+                if(s.hp <= 0 && !s.dead) {
+                    s.dead = true; tank.addXp(s.xpValue);
+                    if (tank === player) updateUI();
+                }
+            }
+        });
+    });
+
+    for (let i = 0; i < bullets.length; i++) {
+        for (let j = i + 1; j < bullets.length; j++) {
+            let b1 = bullets[i]; let b2 = bullets[j];
+            if (!b1.dead && !b2.dead && b1.owner !== b2.owner) {
+                let dx = b1.x - b2.x; let dy = b1.y - b2.y;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < b1.radius + b2.radius) {
+                    let b1Pen = b1.pen;
+                    let b2Pen = b2.pen;
+                   
+                    b1.pen -= b2Pen;
+                    b2.pen -= b1Pen;
+                   
+                    if (b1.pen <= 0) b1.dead = true;
+                    if (b2.pen <= 0) b2.dead = true;
+                }
+            }
+        }
+    }
+}
+
+for(let i=0; i<MAX_SHAPES; i++) spawnShape();
+for(let i=0; i<MAX_BOTS; i++) bots.push(new Bot((Math.random()-0.5)*MAP_SIZE, (Math.random()-0.5)*MAP_SIZE));
+
+function update() {
+    let activeTanks = [];
+
+    if (netChannel && Date.now() - lastNetCleanup > 2000) {
+        lastNetCleanup = Date.now();
+        for (const [id, tank] of remotePlayers.entries()) {
+            if (tank.dead || (tank.lastSeen && Date.now() - tank.lastSeen > 6000)) {
+                remotePlayers.delete(id);
+            }
+        }
+    }
+   
+    if (gameState === 'PLAYING') {
+        player.update();
+        bots.forEach(bot => bot.update());
+        bots = bots.filter(bot => !bot.dead);
+        while (bots.length < MAX_BOTS) bots.push(new Bot((Math.random()-0.5)*MAP_SIZE, (Math.random()-0.5)*MAP_SIZE));
+        if (player.dead) {
+            if (player.score > globalData.highScore) {
+                globalData.highScore = Math.floor(player.score);
+            }
+
+            globalData.savedTank = null;
+            saveGameData();
+
+            stopNetworkSession();
+            gameState = 'START';
+            document.getElementById('start-screen').style.display = 'flex';
+            document.getElementById('game-ui').style.display = 'none';
+            document.getElementById('action-message').style.display = 'none';
+        } else {
+            activeTanks.push(player);
+            camera.x += (player.x - camera.x) * 0.1;
+            camera.y += (player.y - camera.y) * 0.1;
+        }
+    } else {
+        camera.x += 2; camera.y += 1;
+        if(camera.x > MAP_SIZE/2) camera.x = -MAP_SIZE/2;
+        if(camera.y > MAP_SIZE/2) camera.y = -MAP_SIZE/2;
+    }
+
+    remotePlayers.forEach(remote => {
+        if (!remote.dead) activeTanks.push(remote);
+    });
+    bots.forEach(bot => {
+        if (!bot.dead) activeTanks.push(bot);
+    });
+
+    bullets.forEach(b => b.update());
+    bullets = bullets.filter(b => !b.dead);
+
+    groundSpikes.forEach(spike => spike.update());
+    groundSpikes = groundSpikes.filter(spike => !spike.dead);
+
+    shapes.forEach(s => s.update());
+   
+    checkCollisions(activeTanks);
+   
+    shapes = shapes.filter(s => !s.dead);
+    while(shapes.length < MAX_SHAPES) spawnShape();
+
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+   
+    ctx.save();
+    ctx.translate(canvas.width/2 - camera.x, canvas.height/2 - camera.y);
+   
+    ctx.fillStyle = '#e5e5e5';
+    ctx.fillRect(-MAP_SIZE/2, -MAP_SIZE/2, MAP_SIZE, MAP_SIZE);
+    ctx.strokeStyle = '#555'; ctx.lineWidth = 5;
+    ctx.strokeRect(-MAP_SIZE/2, -MAP_SIZE/2, MAP_SIZE, MAP_SIZE);
+
+    ctx.save();
+    const centerGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, CENTER_XP_ZONE_RADIUS);
+    centerGlow.addColorStop(0, 'rgba(255, 255, 210, 0.7)');
+    centerGlow.addColorStop(0.45, 'rgba(255, 245, 180, 0.3)');
+    centerGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = centerGlow;
+    ctx.beginPath();
+    ctx.arc(0, 0, CENTER_XP_ZONE_RADIUS, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(0, 0, CENTER_XP_ZONE_RADIUS, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(90, 90, 90, 0.45)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-280, 0); ctx.lineTo(280, 0);
+    ctx.moveTo(0, -280); ctx.lineTo(0, 280);
+    ctx.stroke();
+    ctx.restore();
+
+    const padding = 100;
+    const viewLeft = camera.x - canvas.width/2 - padding;
+    const viewRight = camera.x + canvas.width/2 + padding;
+    const viewTop = camera.y - canvas.height/2 - padding;
+    const viewBottom = camera.y + canvas.height/2 + padding;
+
+    shapes.forEach(s => { if(s.x > viewLeft && s.x < viewRight && s.y > viewTop && s.y < viewBottom) s.draw(ctx); });
+    groundSpikes.forEach(spike => { if(spike.x > viewLeft && spike.x < viewRight && spike.y > viewTop && spike.y < viewBottom) spike.draw(ctx); });
+    bullets.forEach(b => { if(b.x > viewLeft && b.x < viewRight && b.y > viewTop && b.y < viewBottom) b.draw(ctx); });
+    remotePlayers.forEach(r => { if(!r.dead && r.x > viewLeft && r.x < viewRight && r.y > viewTop && r.y < viewBottom) r.draw(ctx); });
+    bots.forEach(b => { if(!b.dead && b.x > viewLeft && b.x < viewRight && b.y > viewTop && b.y < viewBottom) b.draw(ctx); });
+   
+    if (gameState === 'PLAYING' && !player.dead) player.draw(ctx);
+   
+    ctx.restore();
+
+    if (gameState === 'PLAYING') {
+        const mmSize = 120;
+        const mmX = canvas.width - mmSize - 20;
+        const mmY = canvas.height - mmSize - 20;
+       
+        ctx.fillStyle = 'rgba(200, 200, 200, 0.6)';
+        ctx.fillRect(mmX, mmY, mmSize, mmSize);
+        ctx.strokeStyle = '#555';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(mmX, mmY, mmSize, mmSize);
+       
+        const getMiniMapRadius = (entity, baseRadius = 2) => {
+            const lvl = Math.max(1, entity && typeof entity.level === 'number' ? entity.level : 1);
+            return Math.max(baseRadius, Math.min(8, baseRadius + Math.sqrt(lvl) * 0.6));
+        };
+
+        ctx.fillStyle = '#e74c3c';
+        bots.forEach(b => {
+            if (!b.dead) {
+                let bx = ((b.x + MAP_SIZE/2) / MAP_SIZE) * mmSize;
+                let by = ((b.y + MAP_SIZE/2) / MAP_SIZE) * mmSize;
+                ctx.beginPath();
+                ctx.arc(mmX + bx, mmY + by, getMiniMapRadius(b, 1.8), 0, Math.PI*2);
+                ctx.fill();
+            }
+        });
+        remotePlayers.forEach(r => {
+            if (!r.dead) {
+                let rx = ((r.x + MAP_SIZE/2) / MAP_SIZE) * mmSize;
+                let ry = ((r.y + MAP_SIZE/2) / MAP_SIZE) * mmSize;
+                ctx.fillStyle = '#9b59b6';
+                ctx.beginPath();
+                ctx.arc(mmX + rx, mmY + ry, getMiniMapRadius(r, 2.2), 0, Math.PI*2);
+                ctx.fill();
+            }
+        });
+for (let id in otherPlayers) {
+
+    const p = otherPlayers[id];
+
+    ctx.fillStyle = "red";
+
+    ctx.beginPath();
+    ctx.arc(
+        p.x,
+        p.y,
+        20,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+}
+        if (!player.dead) {
+            let px = ((player.x + MAP_SIZE/2) / MAP_SIZE) * mmSize;
+            let py = ((player.y + MAP_SIZE/2) / MAP_SIZE) * mmSize;
+            ctx.fillStyle = '#2d3436';
+            ctx.beginPath();
+            ctx.arc(mmX + px, mmY + py, getMiniMapRadius(player, 2.6), 0, Math.PI*2);
+            ctx.fill();
+        }
+    }
+}
+
+function loop() {
+    update(); draw(); requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+
+const socket = io();
+socket.on("connect", () => {
+    console.log("Connected!");
+
+    // Join the room the player typed
+    socket.emit("join-room", roomNameInput.value || "public");
+});
+</script>
+</body></html>
