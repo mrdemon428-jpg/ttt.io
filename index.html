@@ -1008,32 +1008,36 @@ const UPGRADE_TREE = {
         'Side Shooter': ['Fourway'],
         'Sniper': ['Scout', 'Bouncy'],
         'Minigun': ['Autogunner', 'Gattling Gunner', 'Gulper'],
-        'Rammer': ['Grinder'],
+        'Rammer': ['Grinder', 'Juggernaut'],
         'Flamethrower': ['Double Flame']
     },
 
     45: {
         'Triple': ['Destroyer', 'Barrage'],
-        'Fourway': ['Rocket', 'Octagon'],
-        'Scout': ['Divider', 'Buckshot'],
+        'Quad Cannon': ['Venom'],
+        'Fourway': ['Rocket', 'Octagon', 'Tornado'],
+        'Scout': ['Divider', 'Buckshot', 'Phantom'],
         'Autogunner': ['Machine'],
         'Grinder': ['Spikey'],
         'Double Flame': ['Freezer'],
-        'Gulper': ['Big Shot']
+        'Gulper': ['Big Shot', 'Quake']
     },
 
     60: {
         'Octagon': ['Ultra Tank'],
-        'Destroyer': ['Scatter'],
+        'Destroyer': ['Scatter', 'Comet'],
         'Gattling Gunner': ['Chainer', 'Gladiator'],
-        'Sniper': ['Gladiator'],
-        'Bouncy': ['Gladiator']
+        'Scout': ['Gladiator'], 
+        'Bouncy': ['Gladiator'],
+        'Spikey': ['Wraith'],
+        'Tornado': ['Vortex'],
+        'Freezer': ['Raygun']
     },
 
     100: {
         'Buckshot': ['Sunshot'],
         'Spikey': ['Mothership'],
-        'Destroyer': ['Voodoo'],
+        'Scatter': ['Voodoo'], 
         'Raygun': ['Double Raygun']
     }
 };
@@ -1093,10 +1097,10 @@ function getTankInfo(tankName) {
     }
 
     if (SHOP_ITEM_IDS.includes(tankName)) info.source = 'Shop (Purchase with Gems)';
-    else if (CHEST_1_TANKS.includes(tankName)) info.source = 'Chests (Map Drops)';
-    else if (CHEST_2_TANKS.includes(tankName)) info.source = 'Epic Chests (Map Drops)';
-    else if (UNIQUE_TANKS.includes(tankName)) info.source = 'Legendary Chest Roll (Extremely Rare)';
-    else if (tankName === 'Cluster Tank' || tankName === 'Blender Tank') info.source = 'Daily Spin Wheel';
+    else if (CHEST_1_TANKS.includes(tankName)) info.source = 'Chests (Map Drops) or Evolution';
+    else if (CHEST_2_TANKS.includes(tankName)) info.source = 'Epic Chests (Map Drops) or Evolution';
+    else if (UNIQUE_TANKS.includes(tankName)) info.source = 'Legendary Chest Roll or Lvl 100 Evolution';
+    else if (tankName === 'Cluster Tank' || tankName === 'Blender Tank') info.source = 'Daily Spin Wheel or Evolution';
 
     return info;
 }
