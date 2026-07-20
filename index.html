@@ -8,11 +8,12 @@
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
         .panel { background: rgba(0, 0, 0, 0.6); color: white; padding: 15px; border-radius: 8px; pointer-events: auto; }
        
-        #start-screen, #shop-screen {
+        #start-screen, #shop-screen, #index-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; justify-content: center; align-items: center;
             background: rgba(0, 0, 0, 0.4); z-index: 50; pointer-events: auto;
         }
+        #index-screen { display: none; }
        
         .start-box {
             background: rgba(0, 0, 0, 0.85); padding: 40px; border-radius: 10px;
@@ -43,6 +44,8 @@
         .btn-play:hover { background: #55efc4; transform: scale(1.05); }
         .btn-shop { background: #0984e3; }
         .btn-shop:hover { background: #74b9ff; transform: scale(1.05); }
+        .btn-index { background: #9b59b6; }
+        .btn-index:hover { background: #cd84f1; transform: scale(1.05); }
         .btn-clear-save { background: #d63031; font-size: 14px; padding: 8px; margin-top: 10px; display: none; }
         .btn-clear-save:hover { background: #ff7675; }
 
@@ -87,7 +90,7 @@
         #spin-timer { margin-top: 8px; font-size: 13px; font-weight: bold; color: #e74c3c; }
         #spin-result { margin-top: 8px; font-size: 15px; font-weight: bold; min-height: 22px; color: #00cec9; text-shadow: 1px 1px 0 #000;}
 
-        /* --- SHOP UI --- */
+        /* --- SHOP / INDEX UI --- */
         #shop-screen { display: none; flex-direction: column; }
         .shop-box {
             background: rgba(0, 0, 0, 0.9); padding: 30px; border-radius: 10px;
@@ -102,12 +105,14 @@
             margin-bottom: 15px; opacity: 0; transition: opacity 0.3s ease;
         }
 
-        .shop-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .shop-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
         .shop-item {
             background: #2d3436; border: 3px solid #555; border-radius: 8px; padding: 15px;
             display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+            cursor: pointer; transition: transform 0.2s;
         }
-        .shop-item h3 { margin: 0 0 10px 0; color: white; }
+        .shop-item:hover { transform: scale(1.03); }
+        .shop-item h3 { margin: 0 0 10px 0; color: white; font-size: 16px; }
        
         .shop-item-canvas {
             background: rgba(0,0,0,0.3); border-radius: 8px; margin-bottom: 10px;
@@ -119,9 +124,21 @@
         .btn-buy { background: #f1c40f; color: black; }
         .btn-buy:hover { background: #ffeaa7; }
         .btn-unlocked { background: #636e72; color: white; cursor: default; }
+        .btn-locked { background: #d63031; color: white; cursor: default; }
        
         .btn-close { background: #d63031; margin-top: 20px; width: auto; padding: 10px 40px; }
         .btn-close:hover { background: #ff7675; transform: scale(1.05); }
+
+        /* --- INDEX DETAIL MODAL --- */
+        #index-detail-modal {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(15, 15, 15, 0.95); border: 4px solid #f1c40f; border-radius: 12px;
+            padding: 30px; text-align: center; width: 350px; z-index: 200;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.9); display: none;
+        }
+        #index-detail-modal h2 { margin: 0 0 15px 0; color: #f1c40f; font-size: 28px; text-shadow: 1px 1px 0 #000;}
+        #index-detail-modal p { font-size: 18px; margin: 8px 0; border-bottom: 1px solid #333; padding-bottom: 8px; }
+        #index-detail-modal p span { font-weight: bold; color: #00cec9; }
 
         /* --- GAME UI --- */
         #game-ui { display: none; width: 100%; height: 100%; }
@@ -192,11 +209,24 @@
             display: none; pointer-events: none; z-index: 200; text-align: center;
         }
 
+        #chest-notification {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 215, 0, 0.9); color: #000; border: 3px solid #fff;
+            padding: 15px 30px; border-radius: 8px; font-weight: bold; font-size: 22px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 300; display: none;
+            pointer-events: none; text-transform: uppercase; animation: pulse 1s infinite alternate;
+        }
+
         @keyframes slideInFadeOut {
             0% { opacity: 0; transform: translateX(50px); }
             10% { opacity: 1; transform: translateX(0); }
             80% { opacity: 1; transform: translateX(0); }
             100% { opacity: 0; transform: translateY(-20px); }
+        }
+
+        @keyframes pulse {
+            0% { transform: translateX(-50%) scale(1); box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+            100% { transform: translateX(-50%) scale(1.05); box-shadow: 0 0 25px rgba(255, 215, 0, 1); }
         }
 
     </style>
@@ -233,6 +263,7 @@
             <input type="text" id="room-name-input" placeholder="Server Code" autocomplete="off" maxlength="20" value="public">
             <button id="play-btn" class="btn btn-play">Play</button>
             <button id="open-shop-btn" class="btn btn-shop">Tank Shop</button>
+            <button id="open-index-btn" class="btn btn-index">Tank Index</button>
             <button id="clear-save-btn" class="btn btn-clear-save" style="display: block;">Delete Saved Level</button>
         </div>
     </div>
@@ -249,7 +280,27 @@
         </div>
     </div>
 
+    <div id="index-screen">
+        <div class="shop-box" style="width: 1000px;">
+            <h1 style="color: #9b59b6; text-shadow: 2px 2px 0 #000;">Tank Index</h1>
+            <div class="shop-grid" id="index-grid"></div>
+            <button id="close-index-btn" class="btn btn-close">Back</button>
+        </div>
+        
+        <div id="index-detail-modal" class="panel">
+            <h2 id="detail-name">Tank Name</h2>
+            <canvas id="detail-canvas" width="140" height="140" style="margin: 0 auto 15px; background: rgba(0,0,0,0.5); border-radius: 8px; border: 2px solid #555;"></canvas>
+            <p>Status: <span id="detail-unlocked"></span></p>
+            <p>Req. Level: <span id="detail-level"></span></p>
+            <p>Evolves From: <span id="detail-parent"></span></p>
+            <p>How to get: <span id="detail-source"></span></p>
+            <button id="close-detail-btn" class="btn btn-close" style="width: 100%; margin-top: 15px;">Close</button>
+        </div>
+    </div>
+
     <div id="game-ui">
+        <div id="chest-notification">A Mysterious Chest has appeared!</div>
+
         <div id="info-panel" class="panel">
             <h2 id="tank-name" style="margin: 0 0 5px 0;">Basic Tank</h2>
             <div id="tank-level">Level 1</div>
@@ -1003,6 +1054,126 @@ const STAT_COLORS = ['#e67e22', '#e74c3c', '#3498db', '#f1c40f', '#f39c12', '#c0
 
 const homeCapGrid = document.getElementById('home-cap-grid');
 const STAT_EFFECT_MULTIPLIER = 0.35;
+
+// --- TANK INDEX LOGIC ---
+const indexScreen = document.getElementById('index-screen');
+const indexGrid = document.getElementById('index-grid');
+const detailModal = document.getElementById('index-detail-modal');
+
+document.getElementById('open-index-btn').addEventListener('click', () => {
+    startScreen.style.display = 'none';
+    indexScreen.style.display = 'flex';
+    renderIndex();
+});
+
+document.getElementById('close-index-btn').addEventListener('click', () => {
+    indexScreen.style.display = 'none';
+    detailModal.style.display = 'none';
+    startScreen.style.display = 'flex';
+});
+
+document.getElementById('close-detail-btn').addEventListener('click', () => {
+    detailModal.style.display = 'none';
+});
+
+function getTankInfo(tankName) {
+    let info = { parent: 'None', level: 1, source: 'Default Upgrade' };
+    
+    if (tankName !== 'Basic') {
+        for (let lvl in UPGRADE_TREE) {
+            let treeLvl = UPGRADE_TREE[lvl];
+            if (Array.isArray(treeLvl)) {
+                if (treeLvl.includes(tankName)) { info.parent = 'Basic'; info.level = lvl; }
+            } else {
+                for (let parent in treeLvl) {
+                    if (treeLvl[parent].includes(tankName)) { info.parent = parent; info.level = lvl; }
+                }
+            }
+        }
+    }
+
+    if (SHOP_ITEM_IDS.includes(tankName)) info.source = 'Shop (Purchase with Gems)';
+    else if (CHEST_1_TANKS.includes(tankName)) info.source = 'Chests (Map Drops)';
+    else if (CHEST_2_TANKS.includes(tankName)) info.source = 'Epic Chests (Map Drops)';
+    else if (UNIQUE_TANKS.includes(tankName)) info.source = 'Legendary Chest Roll (Extremely Rare)';
+    else if (tankName === 'Cluster Tank' || tankName === 'Blender Tank') info.source = 'Daily Spin Wheel';
+
+    return info;
+}
+
+function renderIndex() {
+    indexGrid.innerHTML = '';
+    const allTanks = Object.keys(TANK_CLASSES);
+
+    allTanks.forEach(id => {
+        const config = TANK_CLASSES[id];
+        const isUnlocked = globalData.unlockedTanks.includes(id) || (!SHOP_ITEM_IDS.includes(id) && !CHEST_1_TANKS.includes(id) && !CHEST_2_TANKS.includes(id) && !UNIQUE_TANKS.includes(id) && id !== 'Cluster Tank' && id !== 'Blender Tank');
+
+        const el = document.createElement('div');
+        el.className = 'shop-item';
+        el.style.borderColor = isUnlocked ? config.color : '#333';
+        el.style.opacity = isUnlocked ? '1' : '0.6';
+
+        let statusHTML = isUnlocked
+            ? `<div style="color: #2ecc71; font-weight: bold; margin-top: 5px;">UNLOCKED</div>`
+            : `<div style="color: #e74c3c; font-weight: bold; margin-top: 5px;">LOCKED</div>`;
+
+        el.innerHTML = `
+            <h3>${config.name}</h3>
+            <canvas id="index-canvas-${id}" width="90" height="90" class="shop-item-canvas"></canvas>
+            ${statusHTML}
+        `;
+        
+        el.onclick = () => showIndexDetail(id, isUnlocked);
+        indexGrid.appendChild(el);
+    });
+
+    requestAnimationFrame(() => {
+        allTanks.forEach(id => {
+            const c = document.getElementById('index-canvas-' + id);
+            if(c) {
+                const ctx = c.getContext('2d');
+                ctx.save();
+                ctx.translate(c.width/2, c.height/2);
+                let dummy = new Tank(0,0,true);
+                dummy.setClass(id);
+                dummy.color = TANK_CLASSES[id].color;
+                dummy.alpha = 1; dummy.name = ""; dummy.hp = dummy.maxHp;
+                dummy.draw(ctx);
+                ctx.restore();
+            }
+        });
+    });
+}
+
+function showIndexDetail(tankId, isUnlocked) {
+    const config = TANK_CLASSES[tankId];
+    const info = getTankInfo(tankId);
+
+    document.getElementById('detail-name').textContent = config.name;
+    document.getElementById('detail-name').style.color = config.color;
+    
+    document.getElementById('detail-unlocked').textContent = isUnlocked ? "Unlocked" : "Locked";
+    document.getElementById('detail-unlocked').style.color = isUnlocked ? "#2ecc71" : "#e74c3c";
+
+    document.getElementById('detail-level').textContent = info.level;
+    document.getElementById('detail-parent').textContent = info.parent;
+    document.getElementById('detail-source').textContent = info.source;
+
+    const c = document.getElementById('detail-canvas');
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0,0, c.width, c.height);
+    ctx.save();
+    ctx.translate(c.width/2, c.height/2);
+    let dummy = new Tank(0,0,true);
+    dummy.setClass(tankId);
+    dummy.color = config.color;
+    dummy.alpha = 1; dummy.name = ""; dummy.hp = dummy.maxHp;
+    dummy.draw(ctx);
+    ctx.restore();
+
+    detailModal.style.display = 'block';
+}
 
 function getStatCapUpgradeCost(currentCap) {
     if (currentCap < 8) return 1500;
@@ -1928,10 +2099,28 @@ let groundSpikes = [];
 
 function spawnShape() {
     let r = Math.random();
-    let type = r > 0.99 ? 'chest2' : r > 0.95 ? 'chest1' : r > 0.8 ? 'pentagon' : r > 0.5 ? 'triangle' : 'square';
+    let type = r > 0.8 ? 'pentagon' : r > 0.5 ? 'triangle' : 'square'; // Removed chests from standard pool
     let x = (Math.random()-0.5)*MAP_SIZE;
     let y = (Math.random()-0.5)*MAP_SIZE;
     shapes.push(new Shape(x, y, type));
+}
+
+function spawnRareChest() {
+    let type = Math.random() > 0.85 ? 'chest2' : 'chest1';
+    let x = (Math.random()-0.5)*MAP_SIZE;
+    let y = (Math.random()-0.5)*MAP_SIZE;
+    shapes.push(new Shape(x, y, type));
+    
+    let notif = document.getElementById('chest-notification');
+    let chestName = type === 'chest2' ? 'EPIC CHEST' : 'MYSTERIOUS CHEST';
+    notif.textContent = `A ${chestName} HAS APPEARED SOMEWHERE ON THE MAP! FIND IT FIRST!`;
+    notif.style.color = type === 'chest2' ? '#9b59b6' : '#000';
+    notif.style.borderColor = type === 'chest2' ? '#8e44ad' : '#fff';
+    notif.style.display = 'block';
+    
+    setTimeout(() => {
+        notif.style.display = 'none';
+    }, 6000);
 }
 
 function initGame() {
@@ -1955,10 +2144,12 @@ function initGame() {
    
     bots = []; bullets = []; shapes = []; groundSpikes = [];
     remotePlayers.clear();
+    chestSpawnTimer = 0; // Reset chest timer on start
     document.getElementById('evolution-toggle').style.display = 'none';
     document.getElementById('upgrade-menu').style.display = 'none';
     document.getElementById('kill-feed').innerHTML = '';
     document.getElementById('action-message').style.display = 'none';
+    document.getElementById('chest-notification').style.display = 'none';
 
     for(let i=0; i<MAX_BOTS; i++) {
         bots.push(new Bot((Math.random()-0.5)*MAP_SIZE, (Math.random()-0.5)*MAP_SIZE));
@@ -1969,6 +2160,7 @@ function initGame() {
 
     document.getElementById('start-screen').style.display = 'none';
     document.getElementById('shop-screen').style.display = 'none';
+    document.getElementById('index-screen').style.display = 'none';
     document.getElementById('game-ui').style.display = 'block';
 
     gameState = 'PLAYING';
@@ -2344,6 +2536,8 @@ function checkCollisions(tanksArray) {
     }
 }
 
+let chestSpawnTimer = 0;
+
 function update() {
     let activeTanks = [];
     if (netChannel && Date.now() - lastNetCleanup > 2000) {
@@ -2356,6 +2550,16 @@ function update() {
     }
    
     if (gameState === 'PLAYING') {
+        
+        // --- RARE CHEST SPAWNING LOGIC ---
+        chestSpawnTimer++;
+        if (chestSpawnTimer >= 3600) { // 60 seconds at 60 FPS
+            chestSpawnTimer = 0;
+            if (Math.random() < 0.35) {
+                spawnRareChest();
+            }
+        }
+
         player.update();
         bots.forEach(bot => bot.update());
         bots = bots.filter(bot => !bot.dead);
